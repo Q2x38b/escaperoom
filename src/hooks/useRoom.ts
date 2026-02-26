@@ -28,6 +28,7 @@ export interface UseRoomReturn {
   isRestoring: boolean;
   connectionError: string | null;
   roomCode: string | null;
+  isLocked: boolean;
   typingPlayer: TypingPlayer | null;
   currentPlayerId: string;
   createRoom: (nickname: string) => Promise<void>;
@@ -35,6 +36,8 @@ export interface UseRoomReturn {
   leaveRoom: () => Promise<void>;
   clearError: () => void;
   startGame: () => Promise<void>;
+  endGame: () => Promise<void>;
+  setRoomLock: (isLocked: boolean) => Promise<void>;
   submitPuzzleAnswer: (
     puzzleIndex: number,
     answer: string
@@ -63,6 +66,7 @@ export function useRoom(): UseRoomReturn {
     updatePlayers,
     startGame: storeStartGame,
     solvePuzzle,
+    setCurrentPuzzle,
     setVictory,
     addChatMessage,
     setChatMessages,
@@ -89,6 +93,8 @@ export function useRoom(): UseRoomReturn {
   const clearTypingMutation = useMutation(api.game.clearTypingStatus);
   const kickPlayerMutation = useMutation(api.rooms.kickPlayer);
   const closeRoomMutation = useMutation(api.rooms.closeRoom);
+  const setRoomLockMutation = useMutation(api.rooms.setRoomLock);
+  const endGameMutation = useMutation(api.rooms.endGame);
 
   // Convex queries (reactive)
   const roomData = useQuery(
@@ -188,6 +194,11 @@ export function useRoom(): UseRoomReturn {
       // Update solved puzzles
       roomData.solvedPuzzles.forEach((idx) => solvePuzzle(idx));
 
+      // Sync current puzzle directly from room data to ensure all players see the same puzzle
+      if (roomData.currentPuzzle !== undefined) {
+        setCurrentPuzzle(roomData.currentPuzzle);
+      }
+
       // Update game phase
       if (roomData.phase === "playing" && roomData.startTime) {
         storeStartGame(roomData.startTime);
@@ -202,7 +213,7 @@ export function useRoom(): UseRoomReturn {
       clearSession();
       setPhase('entry');
     }
-  }, [roomData, roomId, identifier, updatePlayers, updateSharedInput, solvePuzzle, storeStartGame, setVictory, setPhase, clearSession, setHost]);
+  }, [roomData, roomId, identifier, updatePlayers, updateSharedInput, solvePuzzle, setCurrentPuzzle, storeStartGame, setVictory, setPhase, clearSession, setHost]);
 
   // Sync chat messages from Convex
   useEffect(() => {
@@ -466,8 +477,37 @@ export function useRoom(): UseRoomReturn {
     }
   }, [roomId, identifier, closeRoomMutation, clearSession, setPhase]);
 
+  const endGame = useCallback(async () => {
+    if (!roomId) return;
+
+    try {
+      await endGameMutation({
+        roomId,
+        hostIdentifier: identifier,
+      });
+      // Room state will update via the reactive query
+    } catch (error) {
+      console.error("Failed to end game:", error);
+    }
+  }, [roomId, identifier, endGameMutation]);
+
+  const setRoomLock = useCallback(async (isLocked: boolean) => {
+    if (!roomId) return;
+
+    try {
+      await setRoomLockMutation({
+        roomId,
+        hostIdentifier: identifier,
+        isLocked,
+      });
+    } catch (error) {
+      console.error("Failed to set room lock:", error);
+    }
+  }, [roomId, identifier, setRoomLockMutation]);
+
   // Get typing player from room data
   const typingPlayer = roomData?.typingPlayer || null;
+  const isLocked = roomData?.isLocked || false;
 
   return {
     isConnected: roomId !== null && roomData !== undefined,
@@ -475,6 +515,7 @@ export function useRoom(): UseRoomReturn {
     isRestoring,
     connectionError,
     roomCode: roomData?.code || null,
+    isLocked,
     typingPlayer,
     currentPlayerId: identifier,
     createRoom,
@@ -482,6 +523,8 @@ export function useRoom(): UseRoomReturn {
     leaveRoom,
     clearError,
     startGame,
+    endGame,
+    setRoomLock,
     submitPuzzleAnswer,
     syncInput,
     claimTyping,

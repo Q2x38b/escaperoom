@@ -22,6 +22,7 @@ export default defineSchema({
       puzzleIndex: v.number(),
       timestamp: v.number(),
     })),
+    isLocked: v.optional(v.boolean()),
     createdAt: v.number(),
   })
     .index("by_code", ["code"])

@@ -174,18 +174,18 @@ export function Puzzle2Base64() {
       <CardContent className="space-y-5">
         {/* Mission brief */}
         <div className="flex gap-3 p-4 rounded-lg bg-white/5 border border-white/20">
-          <Info className="w-5 h-5 text-white/70 shrink-0 mt-0.5" />
-          <div className="text-sm text-white/80">
+          <Info className="w-5 h-5 text-white/90 shrink-0 mt-0.5" />
+          <div className="text-sm text-white/90">
             <span className="text-white font-medium">Transaction Analysis: </span>
             The transaction descriptions have been encoded. Decode the flagged transaction
             (TXN-78291) to reveal important details about suspicious fund movements.
           </div>
         </div>
 
-        {/* Transaction table */}
-        <div className="rounded-xl border border-white/20 overflow-hidden">
+        {/* Transaction table - Desktop */}
+        <div className="rounded-xl border border-white/20 overflow-hidden hidden md:block">
           {/* Header */}
-          <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-white/5 border-b border-white/20 text-xs font-medium text-white/70">
+          <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-white/5 border-b border-white/20 text-xs font-medium text-white/90">
             <div className="col-span-2">TXN ID</div>
             <div className="col-span-2">DATE</div>
             <div className="col-span-4">DESCRIPTION (ENCODED)</div>
@@ -209,9 +209,9 @@ export function Puzzle2Base64() {
                   </Badge>
                 )}
               </div>
-              <div className="col-span-2 font-mono text-sm text-white/70">{txn.date}</div>
+              <div className="col-span-2 font-mono text-sm text-white/90">{txn.date}</div>
               <div className="col-span-4">
-                <code className={`text-xs break-all ${txn.flagged ? 'encrypted-text' : 'text-white/60'}`}>
+                <code className={`text-xs break-all ${txn.flagged ? 'encrypted-text' : 'text-white/80'}`}>
                   {txn.encoded}
                 </code>
               </div>
@@ -224,7 +224,7 @@ export function Puzzle2Base64() {
                       ? 'text-green-500 border-green-500/30'
                       : txn.type === 'Transfer'
                         ? 'text-blue-500 border-blue-500/30'
-                        : 'text-white/70'
+                        : 'text-white/90'
                   }`}
                 >
                   {txn.type}
@@ -234,10 +234,55 @@ export function Puzzle2Base64() {
           ))}
         </div>
 
+        {/* Transaction cards - Mobile */}
+        <div className="space-y-3 md:hidden">
+          {TRANSACTIONS.map((txn) => (
+            <div
+              key={txn.id}
+              className={`rounded-xl border border-white/20 p-4 space-y-3 ${
+                txn.flagged ? 'bg-amber-500/5 border-amber-500/30' : 'bg-white/5'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-sm text-white">{txn.id}</span>
+                  {txn.flagged && (
+                    <Badge variant="outline" className="text-amber-500 border-amber-500/30 text-[10px] px-1.5">
+                      FLAG
+                    </Badge>
+                  )}
+                </div>
+                <Badge
+                  variant="outline"
+                  className={`text-xs ${
+                    txn.type === 'Inbound'
+                      ? 'text-green-500 border-green-500/30'
+                      : txn.type === 'Transfer'
+                        ? 'text-blue-500 border-blue-500/30'
+                        : 'text-white/90'
+                  }`}
+                >
+                  {txn.type}
+                </Badge>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-white/70">{txn.date}</span>
+                <span className="font-mono text-green-500">{txn.amount}</span>
+              </div>
+              <div className="pt-2 border-t border-white/10">
+                <div className="text-xs text-white/60 mb-1">Encoded Description:</div>
+                <code className={`text-xs break-all ${txn.flagged ? 'encrypted-text' : 'text-white/80'}`}>
+                  {txn.encoded}
+                </code>
+              </div>
+            </div>
+          ))}
+        </div>
+
         {/* Encoding hint */}
         <div className="flex gap-3 p-3 rounded-lg bg-white/5 border border-white/20 text-sm">
-          <AlertCircle className="w-4 h-4 text-white/70 shrink-0 mt-0.5" />
-          <div className="text-white/80">
+          <AlertCircle className="w-4 h-4 text-white/90 shrink-0 mt-0.5" />
+          <div className="text-white/90">
             <span className="text-white font-medium">Base64 encoding: </span>
             Uses A-Z, a-z, 0-9, +, / and = for padding. Common in emails and URLs.
           </div>
@@ -270,7 +315,7 @@ export function Puzzle2Base64() {
                 value={answer}
                 onChange={(e) => handleInputChange(e.target.value)}
                 placeholder={otherPlayerTyping ? `${typingPlayer?.nickname} is typing...` : "ENTER DECODED DESCRIPTION"}
-                className={`font-mono uppercase h-10 bg-white/10 border-white/30 text-white placeholder:text-white/50 ${otherPlayerTyping ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`font-mono uppercase h-10 bg-white/10 border-white/40 text-white placeholder:text-white/60 ${otherPlayerTyping ? 'opacity-50 cursor-not-allowed' : ''}`}
                 disabled={otherPlayerTyping}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
@@ -311,7 +356,7 @@ export function Puzzle2Base64() {
               size="sm"
               onClick={handleHint}
               disabled={hintIndex >= 3}
-              className="text-white/70 hover:text-white h-8"
+              className="text-white/90 hover:text-white h-8"
             >
               <Lightbulb className="w-4 h-4 mr-2" />
               Hint ({3 - hintIndex})

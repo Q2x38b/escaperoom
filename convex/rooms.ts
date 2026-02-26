@@ -102,6 +102,11 @@ export const joinRoom = mutation({
       throw new Error("Game has already started");
     }
 
+    // Check if room is locked
+    if (room.isLocked) {
+      throw new Error("Room is locked");
+    }
+
     // Check player count (max 4)
     const players = await ctx.db
       .query("players")
@@ -406,6 +411,59 @@ export const closeRoom = mutation({
 
     // Delete the room
     await ctx.db.delete(args.roomId);
+
+    return { success: true };
+  },
+});
+
+// Lock/unlock room (host only)
+export const setRoomLock = mutation({
+  args: {
+    roomId: v.id("rooms"),
+    hostIdentifier: v.string(),
+    isLocked: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const room = await ctx.db.get(args.roomId);
+    if (!room) throw new Error("Room not found");
+
+    // Verify the requester is the host
+    if (room.hostId !== args.hostIdentifier) {
+      throw new Error("Only the host can lock/unlock the room");
+    }
+
+    await ctx.db.patch(args.roomId, { isLocked: args.isLocked });
+
+    return { success: true, isLocked: args.isLocked };
+  },
+});
+
+// End game and return to waiting room (host only)
+export const endGame = mutation({
+  args: {
+    roomId: v.id("rooms"),
+    hostIdentifier: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const room = await ctx.db.get(args.roomId);
+    if (!room) throw new Error("Room not found");
+
+    // Verify the requester is the host
+    if (room.hostId !== args.hostIdentifier) {
+      throw new Error("Only the host can end the game");
+    }
+
+    // Reset room to waiting state
+    await ctx.db.patch(args.roomId, {
+      phase: "waiting",
+      currentPuzzle: 0,
+      solvedPuzzles: [],
+      startTime: undefined,
+      finalPasscode: undefined,
+      completionTime: undefined,
+      sharedInputs: {},
+      typingPlayer: undefined,
+    });
 
     return { success: true };
   },

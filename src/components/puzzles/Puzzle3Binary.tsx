@@ -159,8 +159,8 @@ export function Puzzle3Binary() {
       <CardContent className="space-y-5">
         {/* Mission brief */}
         <div className="flex gap-3 p-4 rounded-lg bg-white/5 border border-white/20">
-          <Info className="w-5 h-5 text-white/70 shrink-0 mt-0.5" />
-          <div className="text-sm text-white/80">
+          <Info className="w-5 h-5 text-white/90 shrink-0 mt-0.5" />
+          <div className="text-sm text-white/90">
             <span className="text-white font-medium">Hidden File Discovery: </span>
             Our forensic team found a hidden file on the Vance family's secure server.
             Decode the first line to identify the asset purchased with the offshore funds.
@@ -172,10 +172,10 @@ export function Puzzle3Binary() {
           {/* File header */}
           <div className="px-4 py-3 border-b border-white/20 flex items-center justify-between bg-white/5">
             <div className="flex items-center gap-2">
-              <FileCode className="w-4 h-4 text-white/70" />
+              <FileCode className="w-4 h-4 text-white/90" />
               <span className="font-mono text-sm text-white">{BINARY_DATA.filename}</span>
             </div>
-            <div className="flex items-center gap-4 text-xs text-white/60">
+            <div className="flex items-center gap-4 text-xs text-white/80">
               <span>{BINARY_DATA.size}</span>
               <span>{BINARY_DATA.modified}</span>
             </div>
@@ -183,7 +183,7 @@ export function Puzzle3Binary() {
 
           {/* Binary content */}
           <div className="p-4 font-mono text-sm space-y-2">
-            <div className="text-xs text-white/60 mb-3">// Binary contents:</div>
+            <div className="text-xs text-white/80 mb-3">// Binary contents:</div>
             {BINARY_DATA.contents.map((line, index) => (
               <div
                 key={index}
@@ -193,8 +193,8 @@ export function Puzzle3Binary() {
                     : 'bg-white/5'
                 }`}
               >
-                <span className="text-white/50 text-xs w-6">{String(index + 1).padStart(2, '0')}</span>
-                <code className={`text-xs tracking-wide ${index === 0 ? 'encrypted-text' : 'text-white/60'}`}>
+                <span className="text-white/70 text-xs w-6">{String(index + 1).padStart(2, '0')}</span>
+                <code className={`text-xs tracking-wide ${index === 0 ? 'encrypted-text' : 'text-white/80'}`}>
                   {line}
                 </code>
                 {index === 0 && (
@@ -209,8 +209,8 @@ export function Puzzle3Binary() {
 
         {/* Encoding hint */}
         <div className="flex gap-3 p-3 rounded-lg bg-white/5 border border-white/20 text-sm">
-          <AlertCircle className="w-4 h-4 text-white/70 shrink-0 mt-0.5" />
-          <div className="text-white/80">
+          <AlertCircle className="w-4 h-4 text-white/90 shrink-0 mt-0.5" />
+          <div className="text-white/90">
             <span className="text-white font-medium">Binary encoding: </span>
             8 bits = 1 char. Convert to decimal, then ASCII. Example: 01000001 = 65 = 'A'
           </div>
@@ -243,7 +243,7 @@ export function Puzzle3Binary() {
                 value={answer}
                 onChange={(e) => handleInputChange(e.target.value)}
                 placeholder={otherPlayerTyping ? `${typingPlayer?.nickname} is typing...` : "ENTER DECODED WORD"}
-                className={`font-mono uppercase h-10 bg-white/10 border-white/30 text-white placeholder:text-white/50 ${otherPlayerTyping ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`font-mono uppercase h-10 bg-white/10 border-white/40 text-white placeholder:text-white/60 ${otherPlayerTyping ? 'opacity-50 cursor-not-allowed' : ''}`}
                 disabled={otherPlayerTyping}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
@@ -284,7 +284,7 @@ export function Puzzle3Binary() {
               size="sm"
               onClick={handleHint}
               disabled={hintIndex >= 3}
-              className="text-white/70 hover:text-white h-8"
+              className="text-white/90 hover:text-white h-8"
             >
               <Lightbulb className="w-4 h-4 mr-2" />
               Hint ({3 - hintIndex})

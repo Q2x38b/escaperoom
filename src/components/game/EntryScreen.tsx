@@ -85,7 +85,7 @@ export function EntryScreen() {
         </form>
 
         <div className="mt-8 text-center">
-          <span className="font-mono text-xs text-white/60 cursor-blink">
+          <span className="font-mono text-xs text-white/70 cursor-blink">
             Awaiting input
           </span>
         </div>

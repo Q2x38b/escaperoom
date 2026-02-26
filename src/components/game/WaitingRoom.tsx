@@ -53,12 +53,12 @@ export function WaitingRoom() {
             </CardDescription>
           </CardHeader>
 
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4 sm:space-y-6">
             {/* Room Code */}
-            <div className="bg-white/5 border border-white/20 rounded-lg p-6 text-center">
+            <div className="bg-white/5 border border-white/20 rounded-lg p-4 sm:p-6 text-center">
               <div className="text-xs text-white/80 mb-2 font-mono">ROOM CODE</div>
-              <div className="flex items-center justify-center gap-3">
-                <span className="text-3xl font-mono tracking-[0.3em] text-white">
+              <div className="flex items-center justify-center gap-2 sm:gap-3">
+                <span className="text-2xl sm:text-3xl font-mono tracking-[0.2em] sm:tracking-[0.3em] text-white">
                   {displayCode}
                 </span>
                 <Button
@@ -103,7 +103,7 @@ export function WaitingRoom() {
                       <span className="font-medium text-white">
                         {player.nickname}
                         {player.id === playerId && (
-                          <span className="text-xs text-white/60 ml-2">(you)</span>
+                          <span className="text-xs text-white/70 ml-2">(you)</span>
                         )}
                       </span>
                     </div>
@@ -115,7 +115,7 @@ export function WaitingRoom() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 text-white/60 hover:text-red-400 hover:bg-red-500/10"
+                          className="h-7 w-7 text-white/70 hover:text-red-400 hover:bg-red-500/10"
                           onClick={() => handleKickPlayer(player.id)}
                           disabled={kickingPlayer === player.id}
                         >
@@ -134,7 +134,7 @@ export function WaitingRoom() {
                 {Array.from({ length: 4 - players.length }).map((_, i) => (
                   <div
                     key={`empty-${i}`}
-                    className="flex items-center justify-center bg-white/5 border border-dashed border-white/30 rounded-lg px-4 py-3 text-white/50"
+                    className="flex items-center justify-center bg-white/5 border border-dashed border-white/30 rounded-lg px-4 py-3 text-white/60"
                   >
                     <span className="text-sm">Waiting for investigator...</span>
                   </div>
@@ -166,7 +166,7 @@ export function WaitingRoom() {
                   )}
                 </Button>
                 {!canStart && (
-                  <p className="text-xs text-center text-white/60">
+                  <p className="text-xs text-center text-white/70">
                     Need at least 2 investigators to begin
                   </p>
                 )}
@@ -195,7 +195,7 @@ export function WaitingRoom() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full text-white/70 border-white/30 hover:bg-white/10"
+                    className="w-full text-white/80 border-white/30 hover:bg-white/10"
                     onClick={() => setShowCloseConfirm(true)}
                   >
                     <DoorClosed className="w-4 h-4 mr-2" />
@@ -205,15 +205,15 @@ export function WaitingRoom() {
               </div>
             ) : (
               <div className="text-center py-4">
-                <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-white/70" />
+                <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-white/80" />
                 <p className="text-sm text-white/80">
                   Waiting for host to start the investigation...
                 </p>
               </div>
             )}
 
-            {/* Mission Briefing */}
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
+            {/* Mission Briefing - Hidden on mobile, shown on larger screens */}
+            <div className="hidden sm:block bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
               <div className="text-xs text-amber-400 font-mono mb-2">MISSION BRIEFING</div>
               <p className="text-sm text-white/90">
                 Intelligence suggests the Vance family has been moving large sums through

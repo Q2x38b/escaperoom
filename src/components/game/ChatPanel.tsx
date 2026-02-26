@@ -59,17 +59,17 @@ export function ChatPanel() {
         variant="outline"
         size="icon"
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 h-12 w-12 rounded-full shadow-lg bg-white/10 border-white/30 hover:bg-white/20 text-white"
+        className="fixed bottom-4 right-4 z-50 h-10 w-10 sm:h-12 sm:w-12 sm:bottom-6 sm:right-6 rounded-full shadow-lg bg-white/10 border-white/30 hover:bg-white/20 text-white"
       >
         {isOpen ? (
-          <X className="h-5 w-5" />
+          <X className="h-4 w-4 sm:h-5 sm:w-5" />
         ) : (
           <div className="relative">
-            <MessageSquare className="h-5 w-5" />
+            <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5" />
             {unreadCount > 0 && (
               <Badge
                 variant="destructive"
-                className="absolute -top-3 -right-3 h-5 w-5 p-0 flex items-center justify-center text-xs"
+                className="absolute -top-2 -right-2 sm:-top-3 sm:-right-3 h-4 w-4 sm:h-5 sm:w-5 p-0 flex items-center justify-center text-[10px] sm:text-xs"
               >
                 {unreadCount}
               </Badge>
@@ -80,7 +80,7 @@ export function ChatPanel() {
 
       {/* Chat Panel */}
       <div
-        className={`fixed bottom-24 right-6 z-40 w-80 transition-all duration-300 ${
+        className={`fixed bottom-16 right-4 sm:bottom-24 sm:right-6 z-40 w-[calc(100vw-2rem)] sm:w-80 max-w-80 transition-all duration-300 ${
           isOpen
             ? 'opacity-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 translate-y-4 pointer-events-none'
@@ -99,9 +99,9 @@ export function ChatPanel() {
           </div>
 
           {/* Messages */}
-          <div className="h-64 overflow-y-auto p-3 space-y-3">
+          <div className="h-48 sm:h-64 overflow-y-auto p-3 space-y-3">
             {chatMessages.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-white/60 text-sm">
+              <div className="h-full flex items-center justify-center text-white/70 text-sm">
                 <p>No messages yet. Start the conversation!</p>
               </div>
             ) : (
@@ -126,7 +126,7 @@ export function ChatPanel() {
                     )}
                     <p className="text-sm break-words">{msg.message}</p>
                   </div>
-                  <span className="text-[10px] text-white/50 mt-1 px-1">
+                  <span className="text-[10px] text-white/60 mt-1 px-1">
                     {new Date(msg.timestamp).toLocaleTimeString([], {
                       hour: '2-digit',
                       minute: '2-digit',
@@ -146,7 +146,7 @@ export function ChatPanel() {
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Type a message..."
-                className="flex-1 h-9 text-sm bg-white/10 border-white/30 text-white placeholder:text-white/50"
+                className="flex-1 h-9 text-sm bg-white/10 border-white/40 text-white placeholder:text-white/60"
               />
               <Button
                 size="icon"

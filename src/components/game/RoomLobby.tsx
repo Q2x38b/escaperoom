@@ -56,8 +56,8 @@ export function RoomLobby() {
             </>
           ) : (
             <>
-              <Wifi className={`w-4 h-4 ${isConnected ? 'text-green-400' : 'text-white/70'}`} />
-              <span className={`text-sm font-mono ${isConnected ? 'text-green-400' : 'text-white/70'}`}>
+              <Wifi className={`w-4 h-4 ${isConnected ? 'text-green-400' : 'text-white/80'}`} />
+              <span className={`text-sm font-mono ${isConnected ? 'text-green-400' : 'text-white/80'}`}>
                 {isConnected ? 'Ready' : 'Ready to connect'}
               </span>
             </>
@@ -85,7 +85,7 @@ export function RoomLobby() {
                 placeholder="Enter your codename"
                 maxLength={20}
                 disabled={isConnecting}
-                className="bg-white/10 border-white/30 text-white placeholder:text-white/50"
+                className="bg-white/10 border-white/40 text-white placeholder:text-white/60"
               />
             </div>
 
@@ -114,7 +114,7 @@ export function RoomLobby() {
 
             <div className="relative">
               <Separator className="bg-white/20" />
-              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-xs text-white/70">
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-xs text-white/80">
                 OR
               </span>
             </div>
@@ -133,7 +133,7 @@ export function RoomLobby() {
                   placeholder="XXXXXXXX"
                   maxLength={8}
                   disabled={isConnecting}
-                  className="font-mono tracking-widest bg-white/10 border-white/30 text-white text-center placeholder:text-white/50"
+                  className="font-mono tracking-widest bg-white/10 border-white/40 text-white text-center placeholder:text-white/60"
                 />
                 <Button
                   onClick={handleJoinRoom}
@@ -158,7 +158,7 @@ export function RoomLobby() {
                 <Users className="w-4 h-4" />
                 <span>Requires 2+ investigators to begin</span>
               </div>
-              <p className="text-xs text-white/60 mt-2">
+              <p className="text-xs text-white/70 mt-2">
                 Don't have a codename? Pick any alias to identify yourself during the investigation.
               </p>
             </div>

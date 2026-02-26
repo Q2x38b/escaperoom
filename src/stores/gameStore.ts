@@ -42,6 +42,7 @@ interface GameStore {
   updatePlayers: (players: Player[]) => void;
   startGame: (startTime: number) => void;
   solvePuzzle: (puzzleIndex: number) => void;
+  setCurrentPuzzle: (puzzleIndex: number) => void;
   setVictory: (passcode: string, completionTime: number) => void;
   addChatMessage: (message: ChatMessage) => void;
   setChatMessages: (messages: ChatMessage[]) => void;
@@ -102,6 +103,8 @@ export const useGameStore = create<GameStore>()(
           : [...state.solvedPuzzles, puzzleIndex],
         currentPuzzle: puzzleIndex + 1,
       })),
+
+      setCurrentPuzzle: (puzzleIndex) => set({ currentPuzzle: puzzleIndex }),
 
       setVictory: (passcode, completionTime) => set({
         phase: 'victory',

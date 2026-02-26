@@ -3,6 +3,7 @@ import { useGameStore } from '../../stores/gameStore';
 import { BankHeader } from '../bank-ui/BankHeader';
 import { ProgressTracker } from '../bank-ui/ProgressTracker';
 import { ChatPanel } from '../game/ChatPanel';
+import { HostMenu } from '../game/HostMenu';
 import { Puzzle1Hex } from './Puzzle1Hex';
 import { Puzzle2Base64 } from './Puzzle2Base64';
 import { Puzzle3Binary } from './Puzzle3Binary';
@@ -36,16 +37,18 @@ export function PuzzleContainer() {
 
           {/* Collaboration Tip */}
           {showTip && (
-            <div className="flex items-center justify-between gap-4 px-4 py-2.5 rounded-lg bg-white/5 border border-white/20 text-sm">
-              <div className="flex items-center gap-2 text-white/80">
-                <Users className="w-4 h-4 shrink-0" />
+            <div className="flex items-start sm:items-center justify-between gap-2 sm:gap-4 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-white/5 border border-white/20 text-xs sm:text-sm">
+              <div className="flex items-start sm:items-center gap-2 text-white/90">
+                <Users className="w-4 h-4 shrink-0 mt-0.5 sm:mt-0" />
                 <span>
-                  <span className="text-white font-medium">Team mode:</span> Only one person can type at a time. Use chat to coordinate.
+                  <span className="text-white font-medium">Team mode:</span>
+                  <span className="hidden sm:inline"> Only one person can type at a time. Use chat to coordinate.</span>
+                  <span className="sm:hidden"> One types, others chat.</span>
                 </span>
               </div>
               <button
                 onClick={() => setShowTip(false)}
-                className="text-white/60 hover:text-white transition-colors p-1 rounded hover:bg-white/10"
+                className="text-white/80 hover:text-white transition-colors p-1 rounded hover:bg-white/10 shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -61,6 +64,9 @@ export function PuzzleContainer() {
 
       {/* Team Chat */}
       <ChatPanel />
+
+      {/* Host Controls */}
+      <HostMenu />
     </div>
   );
 }

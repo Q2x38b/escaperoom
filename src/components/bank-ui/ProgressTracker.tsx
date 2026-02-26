@@ -8,18 +8,24 @@ const PUZZLE_NAMES = [
   'Hidden Files',
 ];
 
+const PUZZLE_NAMES_SHORT = [
+  'Wire',
+  'Logs',
+  'Files',
+];
+
 const TOTAL_PUZZLES = 3;
 
 export function ProgressTracker() {
   const { currentPuzzle, solvedPuzzles } = useGameStore();
 
   return (
-    <div className="bg-card border border-white/20 rounded-xl p-4">
+    <div className="bg-card border border-white/20 rounded-xl p-3 sm:p-4">
       <div className="flex items-center justify-between mb-4">
         <span className="text-xs text-white/80 font-medium tracking-wide">
           INVESTIGATION PROGRESS
         </span>
-        <span className="text-xs text-white/70">
+        <span className="text-xs text-white/80">
           {solvedPuzzles.length}/{TOTAL_PUZZLES}
         </span>
       </div>
@@ -37,10 +43,10 @@ export function ProgressTracker() {
               <div className="flex flex-col items-center flex-1">
                 <div
                   className={cn(
-                    'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all',
+                    'w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium transition-all',
                     isSolved && 'bg-green-500/20 text-green-400 ring-1 ring-green-500/30',
                     isCurrent && !isSolved && 'bg-primary text-primary-foreground ring-2 ring-primary/30',
-                    isLocked && 'bg-white/10 text-white/50'
+                    isLocked && 'bg-white/10 text-white/70'
                   )}
                 >
                   {isSolved ? (
@@ -53,13 +59,14 @@ export function ProgressTracker() {
                 </div>
                 <span
                   className={cn(
-                    'text-[11px] mt-2 text-center',
+                    'text-[10px] sm:text-[11px] mt-1.5 sm:mt-2 text-center',
                     isSolved && 'text-green-400',
                     isCurrent && !isSolved && 'text-white font-medium',
-                    isLocked && 'text-white/50'
+                    isLocked && 'text-white/70'
                   )}
                 >
-                  {name}
+                  <span className="hidden sm:inline">{name}</span>
+                  <span className="sm:hidden">{PUZZLE_NAMES_SHORT[index]}</span>
                 </span>
               </div>
 

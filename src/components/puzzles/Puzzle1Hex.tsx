@@ -174,8 +174,8 @@ export function Puzzle1Hex() {
       <CardContent className="space-y-5">
         {/* Mission brief */}
         <div className="flex gap-3 p-4 rounded-lg bg-white/5 border border-white/20">
-          <Info className="w-5 h-5 text-white/70 shrink-0 mt-0.5" />
-          <div className="text-sm text-white/80">
+          <Info className="w-5 h-5 text-white/90 shrink-0 mt-0.5" />
+          <div className="text-sm text-white/90">
             <span className="text-white font-medium">Wire Transfer Intercept: </span>
             We've intercepted a wire transfer connected to the $50,000 aircraft donation.
             The destination routing appears to be encoded in hexadecimal. Decode the location.
@@ -186,7 +186,7 @@ export function Puzzle1Hex() {
         <div className="rounded-xl border border-white/20 overflow-hidden">
           {/* Header */}
           <div className="px-4 py-3 border-b border-white/20 flex items-center justify-between bg-white/5">
-            <span className="font-mono text-sm text-white/80">{WIRE_TRANSFER.id}</span>
+            <span className="font-mono text-sm text-white/90">{WIRE_TRANSFER.id}</span>
             <Badge variant="outline" className="text-green-500 border-green-500/30 text-xs">
               {WIRE_TRANSFER.status}
             </Badge>
@@ -196,7 +196,7 @@ export function Puzzle1Hex() {
           <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/20">
             {/* Origin */}
             <div className="p-4">
-              <div className="flex items-center gap-2 text-xs font-medium text-white/70 mb-3">
+              <div className="flex items-center gap-2 text-xs font-medium text-white/90 mb-3">
                 <Building className="w-3.5 h-3.5" />
                 ORIGIN
               </div>
@@ -256,15 +256,15 @@ export function Puzzle1Hex() {
           {/* Transfer info footer */}
           <div className="px-4 py-3 border-t border-white/20 grid grid-cols-3 gap-4 bg-white/5">
             <div>
-              <div className="text-xs text-white/70 mb-0.5">Amount</div>
+              <div className="text-xs text-white/90 mb-0.5">Amount</div>
               <div className="font-mono text-green-500">{WIRE_TRANSFER.amount}</div>
             </div>
             <div>
-              <div className="text-xs text-white/70 mb-0.5">Purpose</div>
+              <div className="text-xs text-white/90 mb-0.5">Purpose</div>
               <div className="text-sm text-white truncate">{WIRE_TRANSFER.purpose}</div>
             </div>
             <div>
-              <div className="text-xs text-white/70 mb-0.5">Date</div>
+              <div className="text-xs text-white/90 mb-0.5">Date</div>
               <div className="font-mono text-sm text-white">{WIRE_TRANSFER.date}</div>
             </div>
           </div>
@@ -272,8 +272,8 @@ export function Puzzle1Hex() {
 
         {/* Encoding hint */}
         <div className="flex gap-3 p-3 rounded-lg bg-white/5 border border-white/20 text-sm">
-          <AlertCircle className="w-4 h-4 text-white/70 shrink-0 mt-0.5" />
-          <div className="text-white/80">
+          <AlertCircle className="w-4 h-4 text-white/90 shrink-0 mt-0.5" />
+          <div className="text-white/90">
             <span className="text-white font-medium">Hex encoding: </span>
             Each pair = hex number (0-9, A-F) → decimal → ASCII. Example: 41 = 65 = 'A'
           </div>
@@ -306,7 +306,7 @@ export function Puzzle1Hex() {
                 value={answer}
                 onChange={(e) => handleInputChange(e.target.value)}
                 placeholder={otherPlayerTyping ? `${typingPlayer?.nickname} is typing...` : "ENTER DECODED LOCATION"}
-                className={`font-mono uppercase h-10 bg-white/10 border-white/30 text-white placeholder:text-white/50 ${otherPlayerTyping ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`font-mono uppercase h-10 bg-white/10 border-white/40 text-white placeholder:text-white/60 ${otherPlayerTyping ? 'opacity-50 cursor-not-allowed' : ''}`}
                 disabled={otherPlayerTyping}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
@@ -347,7 +347,7 @@ export function Puzzle1Hex() {
               size="sm"
               onClick={handleHint}
               disabled={hintIndex >= 3}
-              className="text-white/70 hover:text-white h-8"
+              className="text-white/90 hover:text-white h-8"
             >
               <Lightbulb className="w-4 h-4 mr-2" />
               Hint ({3 - hintIndex})
