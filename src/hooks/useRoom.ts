@@ -332,7 +332,10 @@ export function useRoom(): UseRoomReturn {
         // Immediately update local state on correct answer for instant feedback
         // Other players will sync via the reactive query
         if (result.correct) {
+          // Update solved puzzles and explicitly advance to next puzzle
           solvePuzzle(puzzleIndex);
+          // Also explicitly set the current puzzle to ensure immediate advancement
+          setCurrentPuzzle(puzzleIndex + 1);
 
           // Clear shared inputs for this puzzle so next attempt starts fresh
           updateSharedInput(`puzzle${puzzleIndex}_answer`, '');
@@ -349,7 +352,7 @@ export function useRoom(): UseRoomReturn {
         return { correct: false };
       }
     },
-    [roomId, submitAnswerMutation, solvePuzzle, updateSharedInput, setVictory]
+    [roomId, submitAnswerMutation, solvePuzzle, setCurrentPuzzle, updateSharedInput, setVictory]
   );
 
   const syncInput = useCallback(
