@@ -53,9 +53,21 @@
   * {
     @apply border-border;
   }
+  html {
+    @apply bg-background;
+    overscroll-behavior: none;
+  }
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    overscroll-behavior: none;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  #root {
+    @apply bg-background;
+    min-height: 100vh;
+    min-height: 100dvh;
   }
 }
 

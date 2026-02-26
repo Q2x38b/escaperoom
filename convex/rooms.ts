@@ -332,6 +332,85 @@ export const cleanupInactivePlayers = internalMutation({
   },
 });
 
+// Kick a player from the room (host only)
+export const kickPlayer = mutation({
+  args: {
+    roomId: v.id("rooms"),
+    hostIdentifier: v.string(),
+    targetIdentifier: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const room = await ctx.db.get(args.roomId);
+    if (!room) throw new Error("Room not found");
+
+    // Verify the requester is the host
+    if (room.hostId !== args.hostIdentifier) {
+      throw new Error("Only the host can kick players");
+    }
+
+    // Can't kick yourself
+    if (args.hostIdentifier === args.targetIdentifier) {
+      throw new Error("Cannot kick yourself");
+    }
+
+    // Find and remove the player
+    const player = await ctx.db
+      .query("players")
+      .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+      .filter((q) => q.eq(q.field("odentifier"), args.targetIdentifier))
+      .first();
+
+    if (player) {
+      await ctx.db.delete(player._id);
+      return { success: true, kickedPlayer: player.nickname };
+    }
+
+    return { success: false };
+  },
+});
+
+// Close room and kick all players (host only)
+export const closeRoom = mutation({
+  args: {
+    roomId: v.id("rooms"),
+    hostIdentifier: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const room = await ctx.db.get(args.roomId);
+    if (!room) throw new Error("Room not found");
+
+    // Verify the requester is the host
+    if (room.hostId !== args.hostIdentifier) {
+      throw new Error("Only the host can close the room");
+    }
+
+    // Delete all players
+    const players = await ctx.db
+      .query("players")
+      .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+      .collect();
+
+    for (const player of players) {
+      await ctx.db.delete(player._id);
+    }
+
+    // Delete all chat messages
+    const messages = await ctx.db
+      .query("chatMessages")
+      .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+      .collect();
+
+    for (const msg of messages) {
+      await ctx.db.delete(msg._id);
+    }
+
+    // Delete the room
+    await ctx.db.delete(args.roomId);
+
+    return { success: true };
+  },
+});
+
 // Manual cleanup trigger (can be called by client if needed)
 export const triggerCleanup = mutation({
   handler: async (ctx) => {

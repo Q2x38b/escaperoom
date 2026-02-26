@@ -4,17 +4,30 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
-import { Users, Copy, Check, Play, Crown, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '../ui/alert';
+import { Users, Copy, Check, Play, Crown, Loader2, X, DoorClosed, Info } from 'lucide-react';
 import { useState } from 'react';
 
 export function WaitingRoom() {
-  const { roomId, players, isHost } = useGameStore();
-  const { startGame, roomCode } = useRoom();
+  const { roomId, players, isHost, playerId } = useGameStore();
+  const { startGame, roomCode, kickPlayer, closeRoom } = useRoom();
   const [copied, setCopied] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [kickingPlayer, setKickingPlayer] = useState<string | null>(null);
 
   const canStart = players.length >= 2;
   const displayCode = roomCode || roomId;
+
+  const handleKickPlayer = async (targetId: string) => {
+    setKickingPlayer(targetId);
+    await kickPlayer(targetId);
+    setKickingPlayer(null);
+  };
+
+  const handleCloseRoom = async () => {
+    await closeRoom();
+  };
 
   const handleCopyCode = async () => {
     if (displayCode) {
@@ -87,11 +100,33 @@ export function WaitingRoom() {
                       <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-medium">
                         {player.nickname.charAt(0).toUpperCase()}
                       </div>
-                      <span className="font-medium">{player.nickname}</span>
+                      <span className="font-medium">
+                        {player.nickname}
+                        {player.id === playerId && (
+                          <span className="text-xs text-muted-foreground ml-2">(you)</span>
+                        )}
+                      </span>
                     </div>
-                    {player.isHost && (
-                      <Crown className="w-4 h-4 text-amber-400" />
-                    )}
+                    <div className="flex items-center gap-2">
+                      {player.isHost && (
+                        <Crown className="w-4 h-4 text-amber-400" />
+                      )}
+                      {isHost && !player.isHost && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => handleKickPlayer(player.id)}
+                          disabled={kickingPlayer === player.id}
+                        >
+                          {kickingPlayer === player.id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <X className="w-3 h-3" />
+                          )}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
 
@@ -111,7 +146,7 @@ export function WaitingRoom() {
 
             {/* Start Game Button */}
             {isHost ? (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Button
                   onClick={handleStartGame}
                   disabled={!canStart || isStarting}
@@ -135,6 +170,38 @@ export function WaitingRoom() {
                     Need at least 2 investigators to begin
                   </p>
                 )}
+
+                {/* Close Room Button */}
+                {showCloseConfirm ? (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="flex-1"
+                      onClick={handleCloseRoom}
+                    >
+                      Confirm Close
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => setShowCloseConfirm(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-muted-foreground"
+                    onClick={() => setShowCloseConfirm(true)}
+                  >
+                    <DoorClosed className="w-4 h-4 mr-2" />
+                    Close Room
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="text-center py-4">
@@ -154,6 +221,32 @@ export function WaitingRoom() {
                 secrets. Work together to decode encrypted financial records.
               </p>
             </div>
+
+            {/* How to Play Instructions */}
+            <Alert className="bg-blue-500/10 border-blue-500/30">
+              <Info className="w-4 h-4 text-blue-400" />
+              <AlertDescription className="text-sm">
+                <div className="font-medium text-blue-400 mb-2">How to Play</div>
+                <ul className="space-y-1 text-muted-foreground text-xs">
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-400">1.</span>
+                    <span>Work together to solve 3 decoding puzzles (hex, base64, binary)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-400">2.</span>
+                    <span>Only one person can type an answer at a time - coordinate with your team</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-400">3.</span>
+                    <span>Use the chat panel (bottom right) to communicate with teammates</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-400">4.</span>
+                    <span>Request hints if you get stuck, but try to solve puzzles together first</span>
+                  </li>
+                </ul>
+              </AlertDescription>
+            </Alert>
           </CardContent>
         </Card>
       </div>

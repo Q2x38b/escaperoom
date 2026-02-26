@@ -45,6 +45,8 @@ export interface UseRoomReturn {
   sendChatMessage: (message: string) => void;
   validateEntry: (passcode: string) => Promise<boolean>;
   deleteRoomData: () => Promise<void>;
+  kickPlayer: (targetIdentifier: string) => Promise<{ success: boolean; kickedPlayer?: string }>;
+  closeRoom: () => Promise<void>;
 }
 
 export function useRoom(): UseRoomReturn {
@@ -84,6 +86,8 @@ export function useRoom(): UseRoomReturn {
   const heartbeatMutation = useMutation(api.rooms.heartbeat);
   const setTypingMutation = useMutation(api.game.setTypingStatus);
   const clearTypingMutation = useMutation(api.game.clearTypingStatus);
+  const kickPlayerMutation = useMutation(api.rooms.kickPlayer);
+  const closeRoomMutation = useMutation(api.rooms.closeRoom);
 
   // Convex queries (reactive)
   const roomData = useQuery(
@@ -406,6 +410,41 @@ export function useRoom(): UseRoomReturn {
     });
   }, [roomId, identifier, clearTypingMutation]);
 
+  const kickPlayer = useCallback(
+    async (targetIdentifier: string) => {
+      if (!roomId) return { success: false };
+
+      try {
+        const result = await kickPlayerMutation({
+          roomId,
+          hostIdentifier: identifier,
+          targetIdentifier,
+        });
+        return result;
+      } catch (error) {
+        console.error("Failed to kick player:", error);
+        return { success: false };
+      }
+    },
+    [roomId, identifier, kickPlayerMutation]
+  );
+
+  const closeRoom = useCallback(async () => {
+    if (!roomId) return;
+
+    try {
+      await closeRoomMutation({
+        roomId,
+        hostIdentifier: identifier,
+      });
+      setRoomId(null);
+      clearSession();
+      setPhase("entry");
+    } catch (error) {
+      console.error("Failed to close room:", error);
+    }
+  }, [roomId, identifier, closeRoomMutation, clearSession, setPhase]);
+
   // Get typing player from room data
   const typingPlayer = roomData?.typingPlayer || null;
 
@@ -429,5 +468,7 @@ export function useRoom(): UseRoomReturn {
     sendChatMessage,
     validateEntry,
     deleteRoomData,
+    kickPlayer,
+    closeRoom,
   };
 }
