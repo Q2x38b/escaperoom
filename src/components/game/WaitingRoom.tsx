@@ -4,8 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
-import { Alert, AlertDescription } from '../ui/alert';
-import { Users, Copy, Check, Play, Crown, Loader2, X, DoorClosed, Info } from 'lucide-react';
+import { Users, Copy, Check, Play, Crown, Loader2, X, DoorClosed } from 'lucide-react';
 import { useState } from 'react';
 
 export function WaitingRoom() {
@@ -56,21 +55,22 @@ export function WaitingRoom() {
           <CardContent className="space-y-4 sm:space-y-6">
             {/* Room Code */}
             <div className="bg-white/5 border border-white/20 rounded-lg p-4 sm:p-6 text-center">
-              <div className="text-xs text-white/80 mb-2 font-mono">ROOM CODE</div>
+              <div className="text-xs text-white/80 mb-2 font-mono" aria-hidden="true">ROOM CODE</div>
               <div className="flex items-center justify-center gap-2 sm:gap-3">
-                <span className="text-2xl sm:text-3xl font-mono tracking-[0.2em] sm:tracking-[0.3em] text-white">
+                <span className="text-2xl sm:text-3xl font-mono tracking-[0.2em] sm:tracking-[0.3em] text-white tabular-nums">
                   {displayCode}
                 </span>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={handleCopyCode}
+                  aria-label={copied ? "Room code copied" : `Copy room code ${displayCode}`}
                   className="h-8 w-8"
                 >
                   {copied ? (
-                    <Check className="w-4 h-4 text-green-400" />
+                    <Check className="w-4 h-4 text-green-400" aria-hidden="true" />
                   ) : (
-                    <Copy className="w-4 h-4" />
+                    <Copy className="w-4 h-4" aria-hidden="true" />
                   )}
                 </Button>
               </div>
@@ -84,9 +84,9 @@ export function WaitingRoom() {
                 <span className="text-sm font-medium text-white">
                   Investigation Team
                 </span>
-                <Badge variant={canStart ? 'success' : 'warning'}>
-                  <Users className="w-3 h-3 mr-1" />
-                  {players.length}/4
+                <Badge variant={canStart ? 'success' : 'warning'} className="tabular-nums">
+                  <Users className="w-3 h-3 mr-1" aria-hidden="true" />
+                  <span aria-label={`${players.length} of 4 players`}>{players.length}/4</span>
                 </Badge>
               </div>
 
@@ -109,20 +109,21 @@ export function WaitingRoom() {
                     </div>
                     <div className="flex items-center gap-2">
                       {player.isHost && (
-                        <Crown className="w-4 h-4 text-amber-400" />
+                        <Crown className="w-4 h-4 text-amber-400" aria-label="Host" />
                       )}
                       {isHost && !player.isHost && (
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label={`Remove ${player.nickname} from room`}
                           className="h-7 w-7 text-white/70 hover:text-red-400 hover:bg-red-500/10"
                           onClick={() => handleKickPlayer(player.id)}
                           disabled={kickingPlayer === player.id}
                         >
                           {kickingPlayer === player.id ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
+                            <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
                           ) : (
-                            <X className="w-3 h-3" />
+                            <X className="w-3 h-3" aria-hidden="true" />
                           )}
                         </Button>
                       )}
@@ -155,12 +156,12 @@ export function WaitingRoom() {
                 >
                   {isStarting ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />
                       Starting...
                     </>
                   ) : (
                     <>
-                      <Play className="w-4 h-4 mr-2" />
+                      <Play className="w-4 h-4 mr-2" aria-hidden="true" />
                       Begin Investigation
                     </>
                   )}
@@ -198,22 +199,22 @@ export function WaitingRoom() {
                     className="w-full text-white/80 border-white/30 hover:bg-white/10"
                     onClick={() => setShowCloseConfirm(true)}
                   >
-                    <DoorClosed className="w-4 h-4 mr-2" />
+                    <DoorClosed className="w-4 h-4 mr-2" aria-hidden="true" />
                     Close Room
                   </Button>
                 )}
               </div>
             ) : (
-              <div className="text-center py-4">
-                <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-white/80" />
+              <div className="text-center py-4" aria-live="polite">
+                <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-white/80" aria-hidden="true" />
                 <p className="text-sm text-white/80">
                   Waiting for host to start the investigation...
                 </p>
               </div>
             )}
 
-            {/* Mission Briefing - Hidden on mobile, shown on larger screens */}
-            <div className="hidden sm:block bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
+            {/* Mission Briefing */}
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
               <div className="text-xs text-amber-400 font-mono mb-2">MISSION BRIEFING</div>
               <p className="text-sm text-white/90">
                 Intelligence suggests the Vance family has been moving large sums through
@@ -223,30 +224,23 @@ export function WaitingRoom() {
             </div>
 
             {/* How to Play Instructions */}
-            <Alert className="bg-blue-500/10 border-blue-500/30">
-              <Info className="w-4 h-4 text-blue-400" />
-              <AlertDescription className="text-sm">
-                <div className="font-medium text-blue-400 mb-2">How to Play</div>
-                <ul className="space-y-1 text-white/90 text-xs">
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-400">1.</span>
-                    <span>Work together to solve 3 decoding puzzles (hex, base64, binary)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-400">2.</span>
-                    <span>Only one person can type an answer at a time - coordinate with your team</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-400">3.</span>
-                    <span>Use the chat panel (bottom right) to communicate with teammates</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-400">4.</span>
-                    <span>Request hints if you get stuck, but try to solve puzzles together first</span>
-                  </li>
-                </ul>
-              </AlertDescription>
-            </Alert>
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+              <div className="font-medium text-blue-400 mb-2 text-sm">How to Play</div>
+              <ul className="space-y-1.5 text-white/90 text-xs">
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-400">1.</span>
+                  <span>Work together to solve 3 decoding puzzles (hex, base64, binary)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-400">2.</span>
+                  <span>Only one person can type an answer at a time - coordinate with your team</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-400">3.</span>
+                  <span>Use the chat button in the top bar to communicate with teammates</span>
+                </li>
+              </ul>
+            </div>
           </CardContent>
         </Card>
       </div>

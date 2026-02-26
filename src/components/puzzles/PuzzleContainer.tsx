@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useGameStore } from '../../stores/gameStore';
 import { BankHeader } from '../bank-ui/BankHeader';
 import { ProgressTracker } from '../bank-ui/ProgressTracker';
@@ -12,6 +12,25 @@ import { Users, X } from 'lucide-react';
 export function PuzzleContainer() {
   const currentPuzzle = useGameStore((state) => state.currentPuzzle);
   const [showTip, setShowTip] = useState(true);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isHostMenuOpen, setIsHostMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const handleChatToggle = useCallback(() => {
+    setIsChatOpen(prev => !prev);
+    // Close host menu when opening chat
+    if (!isChatOpen) {
+      setIsHostMenuOpen(false);
+    }
+  }, [isChatOpen]);
+
+  const handleHostMenuToggle = useCallback(() => {
+    setIsHostMenuOpen(prev => !prev);
+    // Close chat when opening host menu
+    if (!isHostMenuOpen) {
+      setIsChatOpen(false);
+    }
+  }, [isHostMenuOpen]);
 
   const renderPuzzle = () => {
     switch (currentPuzzle) {
@@ -28,7 +47,13 @@ export function PuzzleContainer() {
 
   return (
     <div className="min-h-screen bg-background">
-      <BankHeader />
+      <BankHeader
+        isChatOpen={isChatOpen}
+        onChatToggle={handleChatToggle}
+        isHostMenuOpen={isHostMenuOpen}
+        onHostMenuToggle={handleHostMenuToggle}
+        unreadCount={unreadCount}
+      />
 
       <main className="container mx-auto px-4 py-6">
         <div className="max-w-3xl mx-auto space-y-5">
@@ -63,10 +88,17 @@ export function PuzzleContainer() {
       </main>
 
       {/* Team Chat */}
-      <ChatPanel />
+      <ChatPanel
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        onUnreadCountChange={setUnreadCount}
+      />
 
       {/* Host Controls */}
-      <HostMenu />
+      <HostMenu
+        isOpen={isHostMenuOpen}
+        onClose={() => setIsHostMenuOpen(false)}
+      />
     </div>
   );
 }

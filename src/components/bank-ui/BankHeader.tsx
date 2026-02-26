@@ -3,10 +3,26 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { PlayerChip } from '../game/PlayerChip';
 import { useRoom } from '../../hooks/useRoom';
-import { Shield, Copy, Check } from 'lucide-react';
+import { useGameStore } from '../../stores/gameStore';
+import { Shield, Copy, Check, MessageSquare, Settings, Crown } from 'lucide-react';
 
-export function BankHeader() {
+interface BankHeaderProps {
+  isChatOpen?: boolean;
+  onChatToggle?: () => void;
+  isHostMenuOpen?: boolean;
+  onHostMenuToggle?: () => void;
+  unreadCount?: number;
+}
+
+export function BankHeader({
+  isChatOpen,
+  onChatToggle,
+  isHostMenuOpen,
+  onHostMenuToggle,
+  unreadCount = 0,
+}: BankHeaderProps) {
   const { roomCode } = useRoom();
+  const isHost = useGameStore((state) => state.isHost);
   const [copied, setCopied] = useState(false);
 
   const handleCopyCode = async () => {
@@ -22,7 +38,7 @@ export function BankHeader() {
       <div className="container mx-auto px-3 sm:px-4 h-12 sm:h-14 flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center" aria-hidden="true">
             <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
           </div>
           <div className="hidden sm:block">
@@ -39,28 +55,63 @@ export function BankHeader() {
               variant="ghost"
               size="sm"
               onClick={handleCopyCode}
+              aria-label={copied ? "Room code copied" : `Copy room code ${roomCode}`}
               className="h-7 sm:h-8 px-2 sm:px-3 gap-1.5 sm:gap-2 font-mono text-xs sm:text-sm tracking-wider text-white hover:bg-white/10"
             >
-              {roomCode}
+              <span aria-hidden="true">{roomCode}</span>
               {copied ? (
-                <Check className="w-3 h-3 text-green-500" />
+                <Check className="w-3 h-3 text-green-500" aria-hidden="true" />
               ) : (
-                <Copy className="w-3 h-3 text-white/80" />
+                <Copy className="w-3 h-3 text-white/80" aria-hidden="true" />
               )}
             </Button>
           </div>
         )}
 
         {/* Right side */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Verification Status */}
-          <Badge variant="outline" className="security-badge border gap-1.5 hidden sm:flex">
-            <span className="w-1.5 h-1.5 rounded-full bg-current" />
-            <span className="text-xs">Secure</span>
-          </Badge>
-
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Player Count */}
-          <PlayerChip />
+          <PlayerChip showMax={false} />
+
+          {/* Chat Button */}
+          {onChatToggle && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onChatToggle}
+              aria-label={isChatOpen ? "Close chat" : `Open chat${unreadCount > 0 ? `, ${unreadCount} unread messages` : ''}`}
+              aria-expanded={isChatOpen}
+              className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20 text-white relative"
+            >
+              <MessageSquare className="h-4 w-4" aria-hidden="true" />
+              {unreadCount > 0 && !isChatOpen && (
+                <Badge
+                  variant="destructive"
+                  className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px] pointer-events-none"
+                  aria-hidden="true"
+                >
+                  {unreadCount}
+                </Badge>
+              )}
+            </Button>
+          )}
+
+          {/* Host Menu Button - only visible to host */}
+          {isHost && onHostMenuToggle && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onHostMenuToggle}
+              aria-label={isHostMenuOpen ? "Close host menu" : "Open host menu"}
+              aria-expanded={isHostMenuOpen}
+              className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20 text-white"
+            >
+              <div className="relative">
+                <Settings className="h-4 w-4" aria-hidden="true" />
+                <Crown className="absolute -top-1 -right-1 h-2.5 w-2.5 text-amber-400" aria-hidden="true" />
+              </div>
+            </Button>
+          )}
         </div>
       </div>
     </header>

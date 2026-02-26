@@ -4,13 +4,11 @@ import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
-import { useQuery } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
 import { useRoom } from '../../hooks/useRoom';
 import { useGameStore } from '../../stores/gameStore';
 import { TypingIndicator } from '../game/TypingIndicator';
 import {
-  ArrowRight, AlertCircle, Lightbulb, Send, Loader2, Building, Lock, Info
+  ArrowRight, AlertCircle, Send, Loader2, Building, Lock, Info, CheckCircle
 } from 'lucide-react';
 
 // CAYMAN in hex: 43 41 59 4D 41 4E
@@ -40,8 +38,7 @@ export function Puzzle1Hex() {
   const [answer, setAnswer] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hints, setHints] = useState<string[]>([]);
-  const [hintIndex, setHintIndex] = useState(0);
+  const [showSuccess, setShowSuccess] = useState(false);
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isLocallyTypingRef = useRef(false);
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -94,12 +91,6 @@ export function Puzzle1Hex() {
     releaseTyping();
   }, [releaseTyping]);
 
-  // Query hints from Convex
-  const hint0 = useQuery(api.game.getHint, { puzzleIndex: PUZZLE_INDEX, hintIndex: 0 });
-  const hint1 = useQuery(api.game.getHint, { puzzleIndex: PUZZLE_INDEX, hintIndex: 1 });
-  const hint2 = useQuery(api.game.getHint, { puzzleIndex: PUZZLE_INDEX, hintIndex: 2 });
-  const allHints = [hint0, hint1, hint2];
-
   // Sync from shared inputs only when another player is typing (not us)
   useEffect(() => {
     const sharedAnswer = sharedInputs[`puzzle${PUZZLE_INDEX}_answer`];
@@ -135,21 +126,14 @@ export function Puzzle1Hex() {
 
     const result = await submitPuzzleAnswer(PUZZLE_INDEX, answer);
 
-    if (!result.correct) {
+    if (result.correct) {
+      setShowSuccess(true);
+      // The room state will automatically update and switch to next puzzle
+    } else {
       setError('Incorrect. The decoded location does not match our records.');
     }
 
     setIsSubmitting(false);
-  };
-
-  const handleHint = () => {
-    if (hintIndex < 3) {
-      const hint = allHints[hintIndex];
-      if (hint && !hints.includes(hint)) {
-        setHints((prev) => [...prev, hint]);
-      }
-      setHintIndex((prev) => prev + 1);
-    }
   };
 
   return (
@@ -279,22 +263,22 @@ export function Puzzle1Hex() {
           </div>
         </div>
 
-        {/* Hints */}
-        {hints.length > 0 && (
-          <div className="space-y-2">
-            {hints.map((hint, i) => (
-              <Alert key={i} className="border-amber-500/30 bg-amber-500/5">
-                <Lightbulb className="w-4 h-4 text-amber-500" />
-                <AlertDescription className="text-sm">{hint}</AlertDescription>
-              </Alert>
-            ))}
-          </div>
+        {/* Success message */}
+        {showSuccess && (
+          <Alert className="border-green-500/30 bg-green-500/10">
+            <CheckCircle className="w-4 h-4 text-green-500" />
+            <AlertDescription className="text-sm text-green-400">
+              Correct! Moving to the next puzzle...
+            </AlertDescription>
+          </Alert>
         )}
 
         {/* Answer input */}
-        <div className="space-y-3">
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-white">Decoded Destination Location</label>
+            <label htmlFor="puzzle1-answer" className="text-sm font-medium text-white cursor-pointer">
+              Decoded Destination Location
+            </label>
             {otherPlayerTyping && typingPlayer && (
               <TypingIndicator nickname={typingPlayer.nickname} />
             )}
@@ -302,58 +286,42 @@ export function Puzzle1Hex() {
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Input
+                id="puzzle1-answer"
                 type="text"
                 value={answer}
                 onChange={(e) => handleInputChange(e.target.value)}
                 placeholder={otherPlayerTyping ? `${typingPlayer?.nickname} is typing...` : "ENTER DECODED LOCATION"}
                 className={`font-mono uppercase h-10 bg-white/10 border-white/40 text-white placeholder:text-white/60 ${otherPlayerTyping ? 'opacity-50 cursor-not-allowed' : ''}`}
-                disabled={otherPlayerTyping}
+                disabled={otherPlayerTyping || showSuccess}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !isSubmitting && !otherPlayerTyping) {
-                    e.preventDefault();
-                    handleSubmit();
-                  }
-                }}
+                aria-describedby={error ? "puzzle1-error" : undefined}
               />
               {otherPlayerTyping && (
-                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500" />
+                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500 pointer-events-none" aria-hidden="true" />
               )}
             </div>
             <Button
-              onClick={handleSubmit}
-              disabled={!answer.trim() || isSubmitting || otherPlayerTyping}
+              type="submit"
+              disabled={!answer.trim() || isSubmitting || otherPlayerTyping || showSuccess}
+              aria-label="Submit answer"
               className="h-10 px-4"
             >
               {isSubmitting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
               ) : (
-                <Send className="w-4 h-4" />
+                <Send className="w-4 h-4" aria-hidden="true" />
               )}
             </Button>
           </div>
 
           {error && (
-            <Alert variant="destructive" className="py-2">
-              <AlertCircle className="w-4 h-4" />
+            <Alert id="puzzle1-error" variant="destructive" className="py-2" role="alert">
+              <AlertCircle className="w-4 h-4" aria-hidden="true" />
               <AlertDescription className="text-sm">{error}</AlertDescription>
             </Alert>
           )}
-
-          <div className="flex justify-between items-center pt-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleHint}
-              disabled={hintIndex >= 3}
-              className="text-white/90 hover:text-white h-8"
-            >
-              <Lightbulb className="w-4 h-4 mr-2" />
-              Hint ({3 - hintIndex})
-            </Button>
-          </div>
-        </div>
+        </form>
       </CardContent>
     </Card>
   );
