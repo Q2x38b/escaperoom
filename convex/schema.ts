@@ -16,6 +16,12 @@ export default defineSchema({
     finalPasscode: v.optional(v.string()),
     completionTime: v.optional(v.number()),
     sharedInputs: v.record(v.string(), v.string()),
+    typingPlayer: v.optional(v.object({
+      odentifier: v.string(),
+      nickname: v.string(),
+      puzzleIndex: v.number(),
+      timestamp: v.number(),
+    })),
     createdAt: v.number(),
   })
     .index("by_code", ["code"])

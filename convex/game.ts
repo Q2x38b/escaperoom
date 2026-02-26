@@ -152,6 +152,62 @@ export const getHint = query({
   },
 });
 
+// Set typing status (claim input lock)
+export const setTypingStatus = mutation({
+  args: {
+    roomId: v.id("rooms"),
+    odentifier: v.string(),
+    nickname: v.string(),
+    puzzleIndex: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const room = await ctx.db.get(args.roomId);
+    if (!room) throw new Error("Room not found");
+
+    // Check if another player is currently typing (within last 3 seconds)
+    const now = Date.now();
+    if (
+      room.typingPlayer &&
+      room.typingPlayer.odentifier !== args.odentifier &&
+      now - room.typingPlayer.timestamp < 3000
+    ) {
+      // Another player is actively typing
+      return { locked: true, typingPlayer: room.typingPlayer };
+    }
+
+    // Claim the typing lock
+    await ctx.db.patch(args.roomId, {
+      typingPlayer: {
+        odentifier: args.odentifier,
+        nickname: args.nickname,
+        puzzleIndex: args.puzzleIndex,
+        timestamp: now,
+      },
+    });
+
+    return { locked: false };
+  },
+});
+
+// Clear typing status (release input lock)
+export const clearTypingStatus = mutation({
+  args: {
+    roomId: v.id("rooms"),
+    odentifier: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const room = await ctx.db.get(args.roomId);
+    if (!room) throw new Error("Room not found");
+
+    // Only clear if this player is the one typing
+    if (room.typingPlayer?.odentifier === args.odentifier) {
+      await ctx.db.patch(args.roomId, {
+        typingPlayer: undefined,
+      });
+    }
+  },
+});
+
 // Update shared input (for collaborative puzzle solving)
 export const updateSharedInput = mutation({
   args: {

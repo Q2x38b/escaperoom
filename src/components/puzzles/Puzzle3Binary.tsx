@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
@@ -8,8 +8,9 @@ import { useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { useRoom } from '../../hooks/useRoom';
 import { useGameStore } from '../../stores/gameStore';
+import { TypingIndicator } from '../game/TypingIndicator';
 import {
-  FileCode, AlertCircle, Lightbulb, Binary, Send, Loader2, FolderOpen
+  FileCode, AlertCircle, Lightbulb, Binary, Send, Loader2, FolderOpen, Lock
 } from 'lucide-react';
 
 // PLANE in binary:
@@ -37,9 +38,46 @@ export function Puzzle3Binary() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hints, setHints] = useState<string[]>([]);
   const [hintIndex, setHintIndex] = useState(0);
+  const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const { submitPuzzleAnswer, syncInput } = useRoom();
+  const { submitPuzzleAnswer, syncInput, claimTyping, releaseTyping, typingPlayer, currentPlayerId } = useRoom();
   const sharedInputs = useGameStore((state) => state.sharedInputs);
+
+  // Check if another player is typing on this puzzle
+  const otherPlayerTyping = !!(typingPlayer &&
+    typingPlayer.odentifier !== currentPlayerId &&
+    typingPlayer.puzzleIndex === PUZZLE_INDEX &&
+    Date.now() - typingPlayer.timestamp < 3000);
+
+  // Cleanup typing lock on unmount
+  useEffect(() => {
+    return () => {
+      if (typingIntervalRef.current) {
+        clearInterval(typingIntervalRef.current);
+      }
+      releaseTyping();
+    };
+  }, [releaseTyping]);
+
+  const handleFocus = useCallback(async () => {
+    if (otherPlayerTyping) return;
+
+    const claimed = await claimTyping(PUZZLE_INDEX);
+
+    if (claimed) {
+      typingIntervalRef.current = setInterval(async () => {
+        await claimTyping(PUZZLE_INDEX);
+      }, 2000);
+    }
+  }, [claimTyping, otherPlayerTyping]);
+
+  const handleBlur = useCallback(() => {
+    if (typingIntervalRef.current) {
+      clearInterval(typingIntervalRef.current);
+      typingIntervalRef.current = null;
+    }
+    releaseTyping();
+  }, [releaseTyping]);
 
   // Query hints from Convex
   const hint0 = useQuery(api.game.getHint, { puzzleIndex: PUZZLE_INDEX, hintIndex: 0 });
@@ -178,21 +216,39 @@ export function Puzzle3Binary() {
         <div className="space-y-4">
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="text-sm font-medium text-muted-foreground mb-2 block">
-                Decoded Asset Type (First Line)
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-muted-foreground">
+                  Decoded Asset Type (First Line)
+                </label>
+                {otherPlayerTyping && typingPlayer && (
+                  <TypingIndicator nickname={typingPlayer.nickname} />
+                )}
+              </div>
               <div className="flex gap-2">
-                <Input
-                  type="text"
-                  value={answer}
-                  onChange={(e) => handleInputChange(e.target.value)}
-                  placeholder="Enter decoded word"
-                  className="font-mono uppercase bg-black/30"
-                  onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                />
+                <div className="relative flex-1">
+                  <Input
+                    type="text"
+                    value={answer}
+                    onChange={(e) => handleInputChange(e.target.value)}
+                    placeholder={otherPlayerTyping ? `${typingPlayer?.nickname} is typing...` : "Enter decoded word"}
+                    className={`font-mono uppercase bg-black/30 ${otherPlayerTyping ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    disabled={otherPlayerTyping}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !isSubmitting && !otherPlayerTyping) {
+                        e.preventDefault();
+                        handleSubmit();
+                      }
+                    }}
+                  />
+                  {otherPlayerTyping && (
+                    <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-400" />
+                  )}
+                </div>
                 <Button
                   onClick={handleSubmit}
-                  disabled={!answer.trim() || isSubmitting}
+                  disabled={!answer.trim() || isSubmitting || otherPlayerTyping}
                 >
                   {isSubmitting ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

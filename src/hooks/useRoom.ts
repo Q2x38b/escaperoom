@@ -15,12 +15,21 @@ function getOrCreateIdentifier(): string {
   return id;
 }
 
+export interface TypingPlayer {
+  odentifier: string;
+  nickname: string;
+  puzzleIndex: number;
+  timestamp: number;
+}
+
 export interface UseRoomReturn {
   isConnected: boolean;
   isConnecting: boolean;
   isRestoring: boolean;
   connectionError: string | null;
   roomCode: string | null;
+  typingPlayer: TypingPlayer | null;
+  currentPlayerId: string;
   createRoom: (nickname: string) => Promise<void>;
   joinRoom: (roomCode: string, nickname: string) => Promise<void>;
   leaveRoom: () => Promise<void>;
@@ -31,6 +40,8 @@ export interface UseRoomReturn {
     answer: string
   ) => Promise<{ correct: boolean; finalPasscode?: string; completionTime?: number }>;
   syncInput: (key: string, value: string) => void;
+  claimTyping: (puzzleIndex: number) => Promise<boolean>;
+  releaseTyping: () => void;
   sendChatMessage: (message: string) => void;
   validateEntry: (passcode: string) => Promise<boolean>;
   deleteRoomData: () => Promise<void>;
@@ -71,6 +82,8 @@ export function useRoom(): UseRoomReturn {
   const validateEntryMutation = useMutation(api.game.validateEntry);
   const deleteRoomMutation = useMutation(api.game.deleteRoom);
   const heartbeatMutation = useMutation(api.rooms.heartbeat);
+  const setTypingMutation = useMutation(api.game.setTypingStatus);
+  const clearTypingMutation = useMutation(api.game.clearTypingStatus);
 
   // Convex queries (reactive)
   const roomData = useQuery(
@@ -358,12 +371,52 @@ export function useRoom(): UseRoomReturn {
     }
   }, [roomId, deleteRoomMutation, clearSession]);
 
+  const claimTyping = useCallback(
+    async (puzzleIndex: number) => {
+      if (!roomId) return false;
+
+      const playerName =
+        useGameStore.getState().players.find((p) => p.id === identifier)
+          ?.nickname || "Unknown";
+
+      try {
+        const result = await setTypingMutation({
+          roomId,
+          odentifier: identifier,
+          nickname: playerName,
+          puzzleIndex,
+        });
+        return !result.locked;
+      } catch (error) {
+        console.error("Failed to claim typing:", error);
+        return false;
+      }
+    },
+    [roomId, identifier, setTypingMutation]
+  );
+
+  const releaseTyping = useCallback(() => {
+    if (!roomId) return;
+
+    clearTypingMutation({
+      roomId,
+      odentifier: identifier,
+    }).catch((error) => {
+      console.error("Failed to release typing:", error);
+    });
+  }, [roomId, identifier, clearTypingMutation]);
+
+  // Get typing player from room data
+  const typingPlayer = roomData?.typingPlayer || null;
+
   return {
     isConnected: roomId !== null && roomData !== undefined,
     isConnecting,
     isRestoring,
     connectionError,
     roomCode: roomData?.code || null,
+    typingPlayer,
+    currentPlayerId: identifier,
     createRoom,
     joinRoom,
     leaveRoom,
@@ -371,6 +424,8 @@ export function useRoom(): UseRoomReturn {
     startGame,
     submitPuzzleAnswer,
     syncInput,
+    claimTyping,
+    releaseTyping,
     sendChatMessage,
     validateEntry,
     deleteRoomData,

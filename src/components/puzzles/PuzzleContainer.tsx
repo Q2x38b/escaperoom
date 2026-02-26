@@ -1,6 +1,7 @@
 import { useGameStore } from '../../stores/gameStore';
 import { BankHeader } from '../bank-ui/BankHeader';
 import { ProgressTracker } from '../bank-ui/ProgressTracker';
+import { ChatPanel } from '../game/ChatPanel';
 import { Puzzle1Hex } from './Puzzle1Hex';
 import { Puzzle2Base64 } from './Puzzle2Base64';
 import { Puzzle3Binary } from './Puzzle3Binary';
@@ -36,6 +37,9 @@ export function PuzzleContainer() {
           </div>
         </div>
       </main>
+
+      {/* Team Chat */}
+      <ChatPanel />
     </div>
   );
 }
