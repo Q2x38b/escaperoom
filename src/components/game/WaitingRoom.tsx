@@ -1,5 +1,5 @@
 import { useGameStore } from '../../stores/gameStore';
-import { usePeer } from '../../hooks/usePeer';
+import { useRoom } from '../../hooks/useRoom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -9,23 +9,24 @@ import { useState } from 'react';
 
 export function WaitingRoom() {
   const { roomId, players, isHost } = useGameStore();
-  const { startGame } = usePeer();
+  const { startGame, roomCode } = useRoom();
   const [copied, setCopied] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
 
   const canStart = players.length >= 2;
+  const displayCode = roomCode || roomId;
 
   const handleCopyCode = async () => {
-    if (roomId) {
-      await navigator.clipboard.writeText(roomId);
+    if (displayCode) {
+      await navigator.clipboard.writeText(displayCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
   };
 
-  const handleStartGame = () => {
+  const handleStartGame = async () => {
     setIsStarting(true);
-    startGame();
+    await startGame();
   };
 
   return (
@@ -45,7 +46,7 @@ export function WaitingRoom() {
               <div className="text-xs text-muted-foreground mb-2 font-mono">ROOM CODE</div>
               <div className="flex items-center justify-center gap-3">
                 <span className="text-3xl font-mono tracking-[0.3em] text-primary">
-                  {roomId}
+                  {displayCode}
                 </span>
                 <Button
                   variant="ghost"

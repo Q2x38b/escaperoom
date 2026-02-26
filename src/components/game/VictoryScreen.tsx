@@ -1,22 +1,32 @@
 import { useGameStore } from '../../stores/gameStore';
+import { useRoom } from '../../hooks/useRoom';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
-import { Trophy, Clock, Users, Copy, Check, Plane, ArrowRight } from 'lucide-react';
+import { Trophy, Clock, Users, Copy, Check, Plane, ArrowRight, Trash2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { formatTime } from '../../lib/utils';
 
 export function VictoryScreen() {
-  const { finalPasscode, completionTime, players } = useGameStore();
+  const { finalPasscode, completionTime, players, reset } = useGameStore();
+  const { deleteRoomData } = useRoom();
   const [copied, setCopied] = useState(false);
   const [showPasscode, setShowPasscode] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     // Dramatic reveal delay
     const timer = setTimeout(() => setShowPasscode(true), 1500);
     return () => clearTimeout(timer);
   }, []);
+
+  const handleCloseInvestigation = async () => {
+    setIsDeleting(true);
+    await deleteRoomData();
+    reset();
+    // The store reset will take the user back to entry screen
+  };
 
   const handleCopyPasscode = async () => {
     if (finalPasscode) {
@@ -143,6 +153,16 @@ export function VictoryScreen() {
                   </div>
                 </div>
               </div>
+
+              <Button
+                variant="outline"
+                onClick={handleCloseInvestigation}
+                disabled={isDeleting}
+                className="w-full mt-4"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                {isDeleting ? 'Closing Investigation...' : 'Close Investigation & Clear Room Data'}
+              </Button>
             </div>
           </CardContent>
         </Card>

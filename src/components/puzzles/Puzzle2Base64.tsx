@@ -4,7 +4,9 @@ import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Badge } from '../ui/badge';
-import { usePeer } from '../../hooks/usePeer';
+import { useQuery } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
+import { useRoom } from '../../hooks/useRoom';
 import { useGameStore } from '../../stores/gameStore';
 import {
   Receipt, AlertCircle, Lightbulb, FileText, Send, Loader2, ArrowRight
@@ -47,8 +49,14 @@ export function Puzzle2Base64() {
   const [hints, setHints] = useState<string[]>([]);
   const [hintIndex, setHintIndex] = useState(0);
 
-  const { submitPuzzleAttempt, requestHint, syncInput } = usePeer();
+  const { submitPuzzleAnswer, syncInput } = useRoom();
   const sharedInputs = useGameStore((state) => state.sharedInputs);
+
+  // Query hints from Convex
+  const hint0 = useQuery(api.game.getHint, { puzzleIndex: PUZZLE_INDEX, hintIndex: 0 });
+  const hint1 = useQuery(api.game.getHint, { puzzleIndex: PUZZLE_INDEX, hintIndex: 1 });
+  const hint2 = useQuery(api.game.getHint, { puzzleIndex: PUZZLE_INDEX, hintIndex: 2 });
+  const allHints = [hint0, hint1, hint2];
 
   useEffect(() => {
     const sharedAnswer = sharedInputs[`puzzle${PUZZLE_INDEX}_answer`];
@@ -69,7 +77,7 @@ export function Puzzle2Base64() {
     setIsSubmitting(true);
     setError('');
 
-    const result = await submitPuzzleAttempt(PUZZLE_INDEX, answer);
+    const result = await submitPuzzleAnswer(PUZZLE_INDEX, answer);
 
     if (!result.correct) {
       setError('Incorrect. The decoded transaction does not match our records.');
@@ -78,9 +86,9 @@ export function Puzzle2Base64() {
     setIsSubmitting(false);
   };
 
-  const handleHint = async () => {
+  const handleHint = () => {
     if (hintIndex < 3) {
-      const hint = await requestHint(PUZZLE_INDEX, hintIndex);
+      const hint = allHints[hintIndex];
       if (hint && !hints.includes(hint)) {
         setHints((prev) => [...prev, hint]);
       }

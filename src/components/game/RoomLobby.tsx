@@ -3,7 +3,7 @@ import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Separator } from '../ui/separator';
-import { usePeer } from '../../hooks/usePeer';
+import { useRoom } from '../../hooks/useRoom';
 import { Users, Plus, ArrowRight, AlertCircle, Wifi, Loader2 } from 'lucide-react';
 
 export function RoomLobby() {
@@ -11,7 +11,7 @@ export function RoomLobby() {
   const [roomCode, setRoomCode] = useState('');
   const [validationError, setValidationError] = useState('');
 
-  const { isConnected, isConnecting, connectionError, createRoom, joinRoom, clearError } = usePeer();
+  const { isConnected, isConnecting, connectionError, createRoom, joinRoom, clearError } = useRoom();
 
   // Clear validation error when connection error appears
   useEffect(() => {
@@ -20,17 +20,17 @@ export function RoomLobby() {
     }
   }, [connectionError]);
 
-  const handleCreateRoom = () => {
+  const handleCreateRoom = async () => {
     if (!nickname.trim()) {
       setValidationError('Please enter a nickname');
       return;
     }
     setValidationError('');
     clearError();
-    createRoom(nickname.trim());
+    await createRoom(nickname.trim());
   };
 
-  const handleJoinRoom = () => {
+  const handleJoinRoom = async () => {
     if (!nickname.trim()) {
       setValidationError('Please enter a nickname');
       return;
@@ -41,7 +41,7 @@ export function RoomLobby() {
     }
     setValidationError('');
     clearError();
-    joinRoom(roomCode.trim().toUpperCase(), nickname.trim());
+    await joinRoom(roomCode.trim().toUpperCase(), nickname.trim());
   };
 
   return (

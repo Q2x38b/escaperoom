@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { useGameStore } from '../../stores/gameStore';
-import { usePeer } from '../../hooks/usePeer';
+import { useRoom } from '../../hooks/useRoom';
 import { Lock, AlertCircle } from 'lucide-react';
 
 export function EntryScreen() {
@@ -10,7 +10,7 @@ export function EntryScreen() {
   const [error, setError] = useState('');
   const [isChecking, setIsChecking] = useState(false);
   const setPhase = useGameStore((state) => state.setPhase);
-  const { validateEntry } = usePeer();
+  const { validateEntry } = useRoom();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
