@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation } from "./_generated/server";
 
 // Generate a random 8-character room code
 function generateRoomCode(): string {
@@ -34,6 +34,8 @@ export const createRoom = mutation({
         .first();
     }
 
+    const now = Date.now();
+
     // Create the room
     const roomId = await ctx.db.insert("rooms", {
       code,
@@ -42,7 +44,7 @@ export const createRoom = mutation({
       currentPuzzle: 0,
       solvedPuzzles: [],
       sharedInputs: {},
-      createdAt: Date.now(),
+      createdAt: now,
     });
 
     // Add the host as a player
@@ -52,7 +54,8 @@ export const createRoom = mutation({
       nickname: args.nickname,
       isHost: true,
       isReady: true,
-      joinedAt: Date.now(),
+      joinedAt: now,
+      lastSeen: now,
     });
 
     return { roomId, code };
@@ -76,11 +79,9 @@ export const joinRoom = mutation({
       throw new Error("Room not found");
     }
 
-    if (room.phase !== "waiting") {
-      throw new Error("Game has already started");
-    }
+    const now = Date.now();
 
-    // Check if player already in room
+    // Check if player already in room (allow rejoin even if game started)
     const existingPlayer = await ctx.db
       .query("players")
       .withIndex("by_room", (q) => q.eq("roomId", room._id))
@@ -88,9 +89,17 @@ export const joinRoom = mutation({
       .first();
 
     if (existingPlayer) {
-      // Update nickname if rejoining
-      await ctx.db.patch(existingPlayer._id, { nickname: args.nickname });
+      // Update nickname and lastSeen if rejoining
+      await ctx.db.patch(existingPlayer._id, {
+        nickname: args.nickname,
+        lastSeen: now,
+      });
       return { roomId: room._id, code: room.code };
+    }
+
+    // New players can only join if game hasn't started
+    if (room.phase !== "waiting") {
+      throw new Error("Game has already started");
     }
 
     // Check player count (max 4)
@@ -110,7 +119,8 @@ export const joinRoom = mutation({
       nickname: args.nickname,
       isHost: false,
       isReady: true,
-      joinedAt: Date.now(),
+      joinedAt: now,
+      lastSeen: now,
     });
 
     return { roomId: room._id, code: room.code };
@@ -158,6 +168,25 @@ export const leaveRoom = mutation({
       const newHost = remainingPlayers[0];
       await ctx.db.patch(newHost._id, { isHost: true });
       await ctx.db.patch(args.roomId, { hostId: newHost.odentifier });
+    }
+  },
+});
+
+// Player heartbeat - update lastSeen timestamp
+export const heartbeat = mutation({
+  args: {
+    roomId: v.id("rooms"),
+    odentifier: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const player = await ctx.db
+      .query("players")
+      .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+      .filter((q) => q.eq(q.field("odentifier"), args.odentifier))
+      .first();
+
+    if (player) {
+      await ctx.db.patch(player._id, { lastSeen: Date.now() });
     }
   },
 });
@@ -237,5 +266,122 @@ export const cleanupOldRooms = mutation({
     }
 
     return { deletedCount: oldRooms.length };
+  },
+});
+
+// Cleanup inactive players (haven't been seen in 2 minutes)
+// This runs as a scheduled job
+export const cleanupInactivePlayers = internalMutation({
+  handler: async (ctx) => {
+    const twoMinutesAgo = Date.now() - 2 * 60 * 1000;
+
+    // Get all inactive players
+    const inactivePlayers = await ctx.db
+      .query("players")
+      .withIndex("by_lastSeen")
+      .filter((q) => q.lt(q.field("lastSeen"), twoMinutesAgo))
+      .collect();
+
+    const affectedRoomIds = new Set<string>();
+
+    // Delete inactive players
+    for (const player of inactivePlayers) {
+      affectedRoomIds.add(player.roomId);
+      await ctx.db.delete(player._id);
+    }
+
+    // Check affected rooms and clean up empty ones
+    for (const roomIdStr of affectedRoomIds) {
+      const roomId = roomIdStr as any;
+      const room = await ctx.db.get(roomId);
+      if (!room) continue;
+
+      const remainingPlayers = await ctx.db
+        .query("players")
+        .withIndex("by_room", (q) => q.eq("roomId", roomId))
+        .collect();
+
+      if (remainingPlayers.length === 0) {
+        // Delete chat messages
+        const messages = await ctx.db
+          .query("chatMessages")
+          .withIndex("by_room", (q) => q.eq("roomId", roomId))
+          .collect();
+
+        for (const msg of messages) {
+          await ctx.db.delete(msg._id);
+        }
+
+        // Delete room
+        await ctx.db.delete(roomId);
+      } else {
+        // Check if host was removed, transfer if needed
+        const hasHost = remainingPlayers.some(p => p.isHost);
+        if (!hasHost) {
+          const newHost = remainingPlayers[0];
+          await ctx.db.patch(newHost._id, { isHost: true });
+          await ctx.db.patch(roomId, { hostId: newHost.odentifier });
+        }
+      }
+    }
+
+    return {
+      removedPlayers: inactivePlayers.length,
+      affectedRooms: affectedRoomIds.size,
+    };
+  },
+});
+
+// Manual cleanup trigger (can be called by client if needed)
+export const triggerCleanup = mutation({
+  handler: async (ctx) => {
+    const twoMinutesAgo = Date.now() - 2 * 60 * 1000;
+
+    // Get all rooms
+    const rooms = await ctx.db.query("rooms").collect();
+    let cleanedRooms = 0;
+
+    for (const room of rooms) {
+      const players = await ctx.db
+        .query("players")
+        .withIndex("by_room", (q) => q.eq("roomId", room._id))
+        .collect();
+
+      // Filter out inactive players
+      const inactivePlayers = players.filter(p => p.lastSeen < twoMinutesAgo);
+
+      for (const player of inactivePlayers) {
+        await ctx.db.delete(player._id);
+      }
+
+      // Check remaining active players
+      const activePlayers = players.filter(p => p.lastSeen >= twoMinutesAgo);
+
+      if (activePlayers.length === 0) {
+        // Delete chat messages
+        const messages = await ctx.db
+          .query("chatMessages")
+          .withIndex("by_room", (q) => q.eq("roomId", room._id))
+          .collect();
+
+        for (const msg of messages) {
+          await ctx.db.delete(msg._id);
+        }
+
+        // Delete room
+        await ctx.db.delete(room._id);
+        cleanedRooms++;
+      } else {
+        // Ensure there's still a host
+        const hasHost = activePlayers.some(p => p.isHost);
+        if (!hasHost) {
+          const newHost = activePlayers[0];
+          await ctx.db.patch(newHost._id, { isHost: true });
+          await ctx.db.patch(room._id, { hostId: newHost.odentifier });
+        }
+      }
+    }
+
+    return { cleanedRooms };
   },
 });

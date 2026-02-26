@@ -25,7 +25,7 @@ const BINARY_DATA = {
   contents: [
     '01010000 01001100 01000001 01001110 01000101',  // PLANE
     '01010010 01000101 01000111 01001001 01010011 01010100 01010010 01011001', // REGISTRY
-    '01001110 00110111 00110011 00111000 01001010 01001100', // N738JL (hidden hint)
+    '01001110 00110111 00110011 00111000 01010110 01001110', // N738VN (hidden hint)
   ],
 };
 
@@ -108,7 +108,7 @@ export function Puzzle3Binary() {
           <FolderOpen className="w-4 h-4" />
           <AlertTitle>Hidden File Discovery</AlertTitle>
           <AlertDescription>
-            Our forensic team discovered a hidden file on the Jerla family's secure server.
+            Our forensic team discovered a hidden file on the Vance family's secure server.
             The file contains binary-encoded text. Decode the first line to identify
             the asset purchased with the offshore funds.
           </AlertDescription>

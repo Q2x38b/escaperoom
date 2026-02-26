@@ -158,6 +158,9 @@ export function RoomLobby() {
                 <Users className="w-4 h-4" />
                 <span>Requires 2+ investigators to begin</span>
               </div>
+              <p className="text-xs text-muted-foreground/70 mt-2">
+                Don't have a codename? Pick any alias to identify yourself during the investigation.
+              </p>
             </div>
           </CardContent>
         </Card>

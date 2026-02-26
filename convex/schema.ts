@@ -28,9 +28,11 @@ export default defineSchema({
     isHost: v.boolean(),
     isReady: v.boolean(),
     joinedAt: v.number(),
+    lastSeen: v.number(),
   })
     .index("by_room", ["roomId"])
-    .index("by_identifier", ["odentifier"]),
+    .index("by_identifier", ["odentifier"])
+    .index("by_lastSeen", ["lastSeen"]),
 
   chatMessages: defineTable({
     roomId: v.id("rooms"),

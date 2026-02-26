@@ -25,7 +25,7 @@ const WIRE_TRANSFER = {
     bank: 'Caribbean Trust Holdings',
     routing: '43 41 59 4D 41 4E', // CAYMAN in hex
     swift: '4F 43 45 41 4E', // OCEAN
-    reference: '4A 45 52 4C 41', // JERLA
+    reference: '56 41 4E 43 45', // VANCE
   },
   amount: '$50,000.00',
   purpose: 'Aircraft Purchase Deposit',

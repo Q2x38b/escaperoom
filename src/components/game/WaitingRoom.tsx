@@ -149,7 +149,7 @@ export function WaitingRoom() {
             <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
               <div className="text-xs text-amber-400 font-mono mb-2">MISSION BRIEFING</div>
               <p className="text-sm text-muted-foreground">
-                Intelligence suggests the Jerla family has been moving large sums through
+                Intelligence suggests the Vance family has been moving large sums through
                 offshore accounts. Your team must trace the money trail and uncover their
                 secrets. Work together to decode encrypted financial records.
               </p>

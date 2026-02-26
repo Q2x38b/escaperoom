@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { Player, GamePhase, ChatMessage } from '../types/game';
 
 interface GameStore {
@@ -29,6 +30,10 @@ interface GameStore {
   // Shared inputs for collaboration
   sharedInputs: Record<string, string>;
 
+  // Session restoration
+  savedRoomId: string | null;
+  savedNickname: string | null;
+
   // Actions
   setConnected: (connected: boolean) => void;
   setPhase: (phase: GamePhase) => void;
@@ -39,6 +44,8 @@ interface GameStore {
   setVictory: (passcode: string, completionTime: number) => void;
   addChatMessage: (message: ChatMessage) => void;
   updateSharedInput: (key: string, value: string) => void;
+  saveSession: (roomId: string, nickname: string) => void;
+  clearSession: () => void;
   reset: () => void;
 }
 
@@ -56,51 +63,81 @@ const initialState = {
   completionTime: null,
   chatMessages: [],
   sharedInputs: {},
+  savedRoomId: null,
+  savedNickname: null,
 };
 
-export const useGameStore = create<GameStore>((set) => ({
-  ...initialState,
+export const useGameStore = create<GameStore>()(
+  persist(
+    (set) => ({
+      ...initialState,
 
-  setConnected: (isConnected) => set({ isConnected }),
+      setConnected: (isConnected) => set({ isConnected }),
 
-  setPhase: (phase) => set({ phase }),
+      setPhase: (phase) => set({ phase }),
 
-  setRoom: (roomId, playerId, isHost) => set({
-    roomId,
-    playerId,
-    isHost,
-    phase: 'waiting',
-  }),
+      setRoom: (roomId, playerId, isHost) => set({
+        roomId,
+        playerId,
+        isHost,
+        phase: 'waiting',
+      }),
 
-  updatePlayers: (players) => set({ players }),
+      updatePlayers: (players) => set({ players }),
 
-  startGame: (startTime) => set({
-    phase: 'playing',
-    startTime,
-    currentPuzzle: 0,
-    solvedPuzzles: [],
-  }),
+      startGame: (startTime) => set({
+        phase: 'playing',
+        startTime,
+        currentPuzzle: 0,
+        solvedPuzzles: [],
+      }),
 
-  solvePuzzle: (puzzleIndex) => set((state) => ({
-    solvedPuzzles: state.solvedPuzzles.includes(puzzleIndex)
-      ? state.solvedPuzzles
-      : [...state.solvedPuzzles, puzzleIndex],
-    currentPuzzle: puzzleIndex + 1,
-  })),
+      solvePuzzle: (puzzleIndex) => set((state) => ({
+        solvedPuzzles: state.solvedPuzzles.includes(puzzleIndex)
+          ? state.solvedPuzzles
+          : [...state.solvedPuzzles, puzzleIndex],
+        currentPuzzle: puzzleIndex + 1,
+      })),
 
-  setVictory: (passcode, completionTime) => set({
-    phase: 'victory',
-    finalPasscode: passcode,
-    completionTime,
-  }),
+      setVictory: (passcode, completionTime) => set({
+        phase: 'victory',
+        finalPasscode: passcode,
+        completionTime,
+      }),
 
-  addChatMessage: (message) => set((state) => ({
-    chatMessages: [...state.chatMessages, message],
-  })),
+      addChatMessage: (message) => set((state) => ({
+        chatMessages: [...state.chatMessages, message],
+      })),
 
-  updateSharedInput: (key, value) => set((state) => ({
-    sharedInputs: { ...state.sharedInputs, [key]: value },
-  })),
+      updateSharedInput: (key, value) => set((state) => ({
+        sharedInputs: { ...state.sharedInputs, [key]: value },
+      })),
 
-  reset: () => set(initialState),
-}));
+      saveSession: (roomId, nickname) => set({
+        savedRoomId: roomId,
+        savedNickname: nickname,
+      }),
+
+      clearSession: () => set({
+        savedRoomId: null,
+        savedNickname: null,
+      }),
+
+      reset: () => set({
+        ...initialState,
+        // Keep savedRoomId and savedNickname null after reset
+        savedRoomId: null,
+        savedNickname: null,
+      }),
+    }),
+    {
+      name: 'escape-room-game-state',
+      // Only persist specific fields needed for session restoration
+      partialize: (state) => ({
+        savedRoomId: state.savedRoomId,
+        savedNickname: state.savedNickname,
+        phase: state.phase,
+      }),
+    }
+  )
+);

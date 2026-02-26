@@ -80,7 +80,7 @@ export function VictoryScreen() {
               <div className="bg-muted/20 rounded-lg p-4 space-y-2 text-sm">
                 <div className="flex items-start gap-2">
                   <Badge variant="success" className="mt-0.5">1</Badge>
-                  <span>Decoded account holder: <span className="text-amber-400 font-mono">JERLA</span></span>
+                  <span>Decoded account holder: <span className="text-amber-400 font-mono">VANCE</span></span>
                 </div>
                 <div className="flex items-start gap-2">
                   <Badge variant="success" className="mt-0.5">2</Badge>
@@ -148,7 +148,7 @@ export function VictoryScreen() {
                     <div className="font-medium text-amber-400 mb-1">Next Step: Flight Logs</div>
                     <p className="text-sm text-muted-foreground">
                       Use this aircraft registration number to access the flight logs
-                      and discover where the Jerla family's plane has been traveling.
+                      and discover where the Vance family's plane has been traveling.
                     </p>
                   </div>
                 </div>

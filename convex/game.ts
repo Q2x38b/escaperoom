@@ -30,7 +30,7 @@ const PUZZLE_ANSWERS: Record<number, { answer: string; hints: string[] }> = {
 };
 
 const ENTRY_PASSCODE = "INVESTIGATE";
-const FINAL_PASSCODE = "N738JL";
+const FINAL_PASSCODE = "N738VN";
 const TOTAL_PUZZLES = 3;
 
 // Validate entry passcode

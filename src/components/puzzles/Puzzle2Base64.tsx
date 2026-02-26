@@ -106,7 +106,7 @@ export function Puzzle2Base64() {
               Transaction Logs
             </CardTitle>
             <CardDescription>
-              Encoded transaction records from the Jerla account
+              Encoded transaction records from the Vance account
             </CardDescription>
           </div>
           <Badge variant="warning">ENCODED DATA</Badge>

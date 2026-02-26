@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -18,6 +18,7 @@ function getOrCreateIdentifier(): string {
 export interface UseRoomReturn {
   isConnected: boolean;
   isConnecting: boolean;
+  isRestoring: boolean;
   connectionError: string | null;
   roomCode: string | null;
   createRoom: (nickname: string) => Promise<void>;
@@ -37,9 +38,11 @@ export interface UseRoomReturn {
 
 export function useRoom(): UseRoomReturn {
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [roomId, setRoomId] = useState<Id<"rooms"> | null>(null);
   const [identifier] = useState(() => getOrCreateIdentifier());
+  const hasAttemptedRestore = useRef(false);
 
   const {
     setRoom,
@@ -50,6 +53,10 @@ export function useRoom(): UseRoomReturn {
     addChatMessage,
     updateSharedInput,
     setPhase,
+    saveSession,
+    clearSession,
+    savedRoomId,
+    savedNickname,
   } = useGameStore();
 
   // Convex mutations
@@ -62,12 +69,64 @@ export function useRoom(): UseRoomReturn {
   const sendMessageMutation = useMutation(api.game.sendChatMessage);
   const validateEntryMutation = useMutation(api.game.validateEntry);
   const deleteRoomMutation = useMutation(api.game.deleteRoom);
+  const heartbeatMutation = useMutation(api.rooms.heartbeat);
 
   // Convex queries (reactive)
   const roomData = useQuery(
     api.rooms.getRoom,
     roomId ? { roomId } : "skip"
   );
+
+  // Attempt to restore session on mount
+  useEffect(() => {
+    if (hasAttemptedRestore.current) return;
+    hasAttemptedRestore.current = true;
+
+    const restoreSession = async () => {
+      if (savedRoomId && savedNickname) {
+        setIsRestoring(true);
+        try {
+          // Try to rejoin the room
+          const result = await joinRoomMutation({
+            code: savedRoomId,
+            nickname: savedNickname,
+            odentifier: identifier,
+          });
+
+          setRoomId(result.roomId);
+          // Room data will sync via the query
+        } catch (error) {
+          // Room no longer exists, clear the saved session
+          console.log("Could not restore session, room may no longer exist");
+          clearSession();
+          setPhase('entry');
+        } finally {
+          setIsRestoring(false);
+        }
+      }
+    };
+
+    restoreSession();
+  }, [savedRoomId, savedNickname, joinRoomMutation, identifier, clearSession, setPhase]);
+
+  // Heartbeat to keep player active
+  useEffect(() => {
+    if (!roomId) return;
+
+    const sendHeartbeat = () => {
+      heartbeatMutation({ roomId, odentifier: identifier }).catch(() => {
+        // Room may no longer exist
+      });
+    };
+
+    // Send initial heartbeat
+    sendHeartbeat();
+
+    // Send heartbeat every 30 seconds
+    const interval = setInterval(sendHeartbeat, 30000);
+
+    return () => clearInterval(interval);
+  }, [roomId, identifier, heartbeatMutation]);
 
   // Sync room data to store
   useEffect(() => {
@@ -80,6 +139,16 @@ export function useRoom(): UseRoomReturn {
         isReady: p.isReady,
       }));
       updatePlayers(players);
+
+      // Check if current player is still in the room
+      const currentPlayer = roomData.players.find(p => p.odentifier === identifier);
+      if (!currentPlayer && roomData.phase !== 'victory') {
+        // Player was removed from room (kicked or room pruned)
+        setRoomId(null);
+        clearSession();
+        setPhase('entry');
+        return;
+      }
 
       // Update shared inputs
       Object.entries(roomData.sharedInputs).forEach(([key, value]) => {
@@ -97,8 +166,13 @@ export function useRoom(): UseRoomReturn {
       } else if (roomData.phase === "waiting") {
         setPhase("waiting");
       }
+    } else if (roomData === null && roomId) {
+      // Room was deleted
+      setRoomId(null);
+      clearSession();
+      setPhase('entry');
     }
-  }, [roomData, updatePlayers, updateSharedInput, solvePuzzle, storeStartGame, setVictory, setPhase]);
+  }, [roomData, roomId, identifier, updatePlayers, updateSharedInput, solvePuzzle, storeStartGame, setVictory, setPhase, clearSession]);
 
   const clearError = useCallback(() => {
     setConnectionError(null);
@@ -117,6 +191,7 @@ export function useRoom(): UseRoomReturn {
 
         setRoomId(result.roomId);
         setRoom(result.code, identifier, true);
+        saveSession(result.code, nickname);
       } catch (error) {
         setConnectionError(
           error instanceof Error ? error.message : "Failed to create room"
@@ -125,7 +200,7 @@ export function useRoom(): UseRoomReturn {
         setIsConnecting(false);
       }
     },
-    [createRoomMutation, identifier, setRoom]
+    [createRoomMutation, identifier, setRoom, saveSession]
   );
 
   const joinRoom = useCallback(
@@ -142,6 +217,7 @@ export function useRoom(): UseRoomReturn {
 
         setRoomId(result.roomId);
         setRoom(result.code, identifier, false);
+        saveSession(result.code, nickname);
       } catch (error) {
         setConnectionError(
           error instanceof Error ? error.message : "Failed to join room"
@@ -150,7 +226,7 @@ export function useRoom(): UseRoomReturn {
         setIsConnecting(false);
       }
     },
-    [joinRoomMutation, identifier, setRoom]
+    [joinRoomMutation, identifier, setRoom, saveSession]
   );
 
   const leaveRoom = useCallback(async () => {
@@ -162,10 +238,11 @@ export function useRoom(): UseRoomReturn {
         odentifier: identifier,
       });
       setRoomId(null);
+      clearSession();
     } catch (error) {
       console.error("Failed to leave room:", error);
     }
-  }, [roomId, identifier, leaveRoomMutation]);
+  }, [roomId, identifier, leaveRoomMutation, clearSession]);
 
   const startGame = useCallback(async () => {
     if (!roomId) return;
@@ -269,14 +346,16 @@ export function useRoom(): UseRoomReturn {
     try {
       await deleteRoomMutation({ roomId });
       setRoomId(null);
+      clearSession();
     } catch (error) {
       console.error("Failed to delete room:", error);
     }
-  }, [roomId, deleteRoomMutation]);
+  }, [roomId, deleteRoomMutation, clearSession]);
 
   return {
     isConnected: roomId !== null && roomData !== undefined,
     isConnecting,
+    isRestoring,
     connectionError,
     roomCode: roomData?.code || null,
     createRoom,
