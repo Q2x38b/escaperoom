@@ -48,7 +48,7 @@ export function VictoryScreen() {
             <h2 className="text-2xl font-bold text-green-400 mb-2">
               INVESTIGATION COMPLETE
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-white/70">
               You've successfully traced the money trail
             </p>
           </div>
@@ -56,17 +56,17 @@ export function VictoryScreen() {
           <CardContent className="p-6 space-y-6">
             {/* Stats */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-muted/30 rounded-lg p-4 text-center">
-                <Clock className="w-5 h-5 mx-auto mb-2 text-muted-foreground" />
-                <div className="text-2xl font-mono font-bold">
+              <div className="bg-white/5 rounded-lg p-4 text-center">
+                <Clock className="w-5 h-5 mx-auto mb-2 text-white/70" />
+                <div className="text-2xl font-mono font-bold text-white">
                   {completionTime ? formatTime(completionTime) : '--:--'}
                 </div>
-                <div className="text-xs text-muted-foreground">Total Time</div>
+                <div className="text-xs text-white/70">Total Time</div>
               </div>
-              <div className="bg-muted/30 rounded-lg p-4 text-center">
-                <Users className="w-5 h-5 mx-auto mb-2 text-muted-foreground" />
-                <div className="text-2xl font-mono font-bold">{players.length}</div>
-                <div className="text-xs text-muted-foreground">Investigators</div>
+              <div className="bg-white/5 rounded-lg p-4 text-center">
+                <Users className="w-5 h-5 mx-auto mb-2 text-white/70" />
+                <div className="text-2xl font-mono font-bold text-white">{players.length}</div>
+                <div className="text-xs text-white/70">Investigators</div>
               </div>
             </div>
 
@@ -74,29 +74,29 @@ export function VictoryScreen() {
 
             {/* Investigation Summary */}
             <div className="space-y-3">
-              <h3 className="text-sm font-medium text-muted-foreground">
+              <h3 className="text-sm font-medium text-white/70">
                 Investigation Summary
               </h3>
-              <div className="bg-muted/20 rounded-lg p-4 space-y-2 text-sm">
+              <div className="bg-white/5 rounded-lg p-4 space-y-2 text-sm">
                 <div className="flex items-start gap-2">
                   <Badge variant="success" className="mt-0.5">1</Badge>
-                  <span>Decoded account holder: <span className="text-amber-400 font-mono">VANCE</span></span>
+                  <span className="text-white/90">Decoded account holder: <span className="text-amber-400 font-mono">VANCE</span></span>
                 </div>
                 <div className="flex items-start gap-2">
                   <Badge variant="success" className="mt-0.5">2</Badge>
-                  <span>Found transaction: <span className="text-amber-400 font-mono">DONATION-50000-AIRCRAFT</span></span>
+                  <span className="text-white/90">Found transaction: <span className="text-amber-400 font-mono">DONATION-50000-AIRCRAFT</span></span>
                 </div>
                 <div className="flex items-start gap-2">
                   <Badge variant="success" className="mt-0.5">3</Badge>
-                  <span>Traced funds to: <span className="text-amber-400 font-mono">CAYMAN</span></span>
+                  <span className="text-white/90">Traced funds to: <span className="text-amber-400 font-mono">CAYMAN</span></span>
                 </div>
                 <div className="flex items-start gap-2">
                   <Badge variant="success" className="mt-0.5">4</Badge>
-                  <span>Identified asset: <span className="text-amber-400 font-mono">PLANE</span></span>
+                  <span className="text-white/90">Identified asset: <span className="text-amber-400 font-mono">PLANE</span></span>
                 </div>
                 <div className="flex items-start gap-2">
                   <Badge variant="success" className="mt-0.5">5</Badge>
-                  <span>Retrieved aircraft registry</span>
+                  <span className="text-white/90">Retrieved aircraft registry</span>
                 </div>
               </div>
             </div>
@@ -105,7 +105,7 @@ export function VictoryScreen() {
 
             {/* Final Passcode Reveal */}
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <div className="flex items-center gap-2 text-sm font-medium text-white/70">
                 <Plane className="w-4 h-4" />
                 <span>Aircraft Registration Number</span>
               </div>
@@ -146,7 +146,7 @@ export function VictoryScreen() {
                   <ArrowRight className="w-5 h-5 text-amber-400 mt-0.5" />
                   <div>
                     <div className="font-medium text-amber-400 mb-1">Next Step: Flight Logs</div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-white/70">
                       Use this aircraft registration number to access the flight logs
                       and discover where the Vance family's plane has been traveling.
                     </p>
