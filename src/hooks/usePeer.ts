@@ -28,6 +28,23 @@ interface UsePeerReturn {
   validateEntry: (passcode: string) => Promise<boolean>;
 }
 
+// PeerJS configuration with better STUN/TURN servers
+const PEER_CONFIG = {
+  config: {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' },
+      { urls: 'stun:stun3.l.google.com:19302' },
+      { urls: 'stun:stun4.l.google.com:19302' },
+    ],
+  },
+  debug: 1, // Show warnings and errors
+};
+
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 2000;
+
 export function usePeer(): UsePeerReturn {
   const peerRef = useRef<Peer | null>(null);
   const connectionsRef = useRef<Map<string, DataConnection>>(new Map());
@@ -37,6 +54,7 @@ export function usePeer(): UsePeerReturn {
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const hostConnectionRef = useRef<DataConnection | null>(null);
   const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const retryCountRef = useRef(0);
 
   const clearError = useCallback(() => {
     setConnectionError(null);
@@ -184,7 +202,7 @@ export function usePeer(): UsePeerReturn {
     setConnectionError(null);
 
     const peerId = uuidv4().slice(0, 8).toUpperCase();
-    const peer = new Peer(peerId);
+    const peer = new Peer(peerId, PEER_CONFIG);
 
     peer.on('open', (id) => {
       console.log('Peer opened with ID:', id);
@@ -243,8 +261,8 @@ export function usePeer(): UsePeerReturn {
     });
   }, [setRoom, updatePlayers, setupConnection, broadcast]);
 
-  // Join an existing room
-  const joinRoom = useCallback((code: string, nickname: string) => {
+  // Join an existing room with retry logic
+  const joinRoom = useCallback((code: string, nickname: string, isRetry = false) => {
     // Clean up any existing connection
     if (peerRef.current) {
       peerRef.current.destroy();
@@ -254,55 +272,80 @@ export function usePeer(): UsePeerReturn {
       clearTimeout(connectionTimeoutRef.current);
     }
 
+    if (!isRetry) {
+      retryCountRef.current = 0;
+    }
+
     setIsConnecting(true);
     setConnectionError(null);
 
     const peerId = uuidv4().slice(0, 8).toUpperCase();
-    const peer = new Peer(peerId);
+    const peer = new Peer(peerId, PEER_CONFIG);
 
-    // Set connection timeout (10 seconds)
+    // Set connection timeout (15 seconds)
     connectionTimeoutRef.current = setTimeout(() => {
-      if (!isConnected) {
+      console.log('Connection timeout reached');
+      peer.destroy();
+
+      // Retry if we haven't exceeded max retries
+      if (retryCountRef.current < MAX_RETRIES) {
+        retryCountRef.current++;
+        console.log(`Retrying connection (attempt ${retryCountRef.current + 1}/${MAX_RETRIES + 1})...`);
+        setConnectionError(`Retrying connection (attempt ${retryCountRef.current + 1})...`);
+        setTimeout(() => joinRoom(code, nickname, true), RETRY_DELAY);
+      } else {
         setIsConnecting(false);
         setConnectionError('Connection timed out. The room may not exist or the host may be offline.');
-        peer.destroy();
       }
-    }, 10000);
+    }, 15000);
 
     peer.on('open', (id) => {
       console.log('Peer opened with ID:', id);
       peerRef.current = peer;
 
-      // Connect to host
-      const conn = peer.connect(code.toUpperCase(), {
-        metadata: { nickname },
-        reliable: true,
-      });
+      // Small delay before connecting to ensure host is fully registered
+      setTimeout(() => {
+        // Connect to host
+        const conn = peer.connect(code.toUpperCase(), {
+          metadata: { nickname },
+          reliable: true,
+        });
 
-      hostConnectionRef.current = conn;
-      setupConnection(conn, false);
+        hostConnectionRef.current = conn;
+        setupConnection(conn, false);
 
-      conn.on('open', () => {
-        console.log('Connected to host');
-        if (connectionTimeoutRef.current) {
-          clearTimeout(connectionTimeoutRef.current);
-        }
-        setIsConnecting(false);
-        setIsConnected(true);
-        setRoomCode(code.toUpperCase());
-        setRoom(code.toUpperCase(), id, false);
-        // Player list will be updated when we receive sync-state from host
-      });
+        conn.on('open', () => {
+          console.log('Connected to host');
+          if (connectionTimeoutRef.current) {
+            clearTimeout(connectionTimeoutRef.current);
+          }
+          retryCountRef.current = 0;
+          setIsConnecting(false);
+          setIsConnected(true);
+          setRoomCode(code.toUpperCase());
+          setRoom(code.toUpperCase(), id, false);
+          // Player list will be updated when we receive sync-state from host
+        });
 
-      conn.on('error', (err) => {
-        console.error('Connection error:', err);
-        if (connectionTimeoutRef.current) {
-          clearTimeout(connectionTimeoutRef.current);
-        }
-        setIsConnecting(false);
-        setIsConnected(false);
-        setConnectionError('Failed to connect to the room. Please check the room code and try again.');
-      });
+        conn.on('error', (err) => {
+          console.error('Connection error:', err);
+          if (connectionTimeoutRef.current) {
+            clearTimeout(connectionTimeoutRef.current);
+          }
+
+          // Retry on connection error
+          if (retryCountRef.current < MAX_RETRIES) {
+            retryCountRef.current++;
+            console.log(`Retrying after connection error (attempt ${retryCountRef.current + 1}/${MAX_RETRIES + 1})...`);
+            peer.destroy();
+            setTimeout(() => joinRoom(code, nickname, true), RETRY_DELAY);
+          } else {
+            setIsConnecting(false);
+            setIsConnected(false);
+            setConnectionError('Failed to connect to the room. Please check the room code and try again.');
+          }
+        });
+      }, 500); // 500ms delay before connecting
     });
 
     peer.on('error', (err) => {
@@ -310,11 +353,23 @@ export function usePeer(): UsePeerReturn {
       if (connectionTimeoutRef.current) {
         clearTimeout(connectionTimeoutRef.current);
       }
+
+      const errorType = (err as { type?: string }).type;
+
+      // Retry on peer-unavailable (might just be timing issue)
+      if (errorType === 'peer-unavailable' && retryCountRef.current < MAX_RETRIES) {
+        retryCountRef.current++;
+        console.log(`Room not found, retrying (attempt ${retryCountRef.current + 1}/${MAX_RETRIES + 1})...`);
+        setConnectionError(`Looking for room... (attempt ${retryCountRef.current + 1})`);
+        peer.destroy();
+        setTimeout(() => joinRoom(code, nickname, true), RETRY_DELAY);
+        return;
+      }
+
       setIsConnecting(false);
       setIsConnected(false);
 
       // Provide user-friendly error messages
-      const errorType = (err as { type?: string }).type;
       if (errorType === 'peer-unavailable') {
         setConnectionError('Room not found. The room code may be incorrect or the host may have left.');
       } else if (errorType === 'network') {
@@ -325,7 +380,7 @@ export function usePeer(): UsePeerReturn {
         setConnectionError('Could not connect to room. Please check the room code and try again.');
       }
     });
-  }, [setRoom, setupConnection, isConnected]);
+  }, [setRoom, setupConnection]);
 
   // Start the game (host only)
   const startGame = useCallback(() => {
