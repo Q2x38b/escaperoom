@@ -277,6 +277,15 @@ export const getRolePuzzleData = query({
     puzzleIndex: v.number(),
   },
   handler: async (ctx, args) => {
+    // Validate puzzle index is in valid range
+    if (args.puzzleIndex < 0 || args.puzzleIndex >= TOTAL_PUZZLES) {
+      return null;
+    }
+
+    // Verify room exists
+    const room = await ctx.db.get(args.roomId);
+    if (!room) return null;
+
     // Find the player to get their role
     const player = await ctx.db
       .query("players")
@@ -292,6 +301,10 @@ export const getRolePuzzleData = query({
     const puzzleData = ROLE_PUZZLE_DATA[args.puzzleIndex];
     if (!puzzleData) return null;
 
+    // Verify role-specific data exists
+    const roleData = puzzleData[role];
+    if (!roleData) return null;
+
     // Get the total player count to determine if fieldAgent should see decoder info too
     const players = await ctx.db
       .query("players")
@@ -302,29 +315,35 @@ export const getRolePuzzleData = query({
 
     if (role === "analyst") {
       return {
-        role: "analyst",
-        ...puzzleData.analyst,
+        role: "analyst" as const,
+        title: puzzleData.analyst.title,
+        description: puzzleData.analyst.description,
+        data: puzzleData.analyst.data,
         canSubmit: false,
       };
     } else if (role === "decoder") {
       return {
-        role: "decoder",
-        ...puzzleData.decoder,
+        role: "decoder" as const,
+        title: puzzleData.decoder.title,
+        description: puzzleData.decoder.description,
+        data: puzzleData.decoder.data,
         canSubmit: false,
       };
     } else {
       // fieldAgent - can submit, and in 2-player mode also sees decoder info
       if (playerCount === 2) {
         return {
-          role: "fieldAgent",
-          ...puzzleData.fieldAgent,
+          role: "fieldAgent" as const,
+          title: puzzleData.fieldAgent.title,
+          description: puzzleData.fieldAgent.description,
           decoderData: puzzleData.decoder,
           canSubmit: true,
         };
       }
       return {
-        role: "fieldAgent",
-        ...puzzleData.fieldAgent,
+        role: "fieldAgent" as const,
+        title: puzzleData.fieldAgent.title,
+        description: puzzleData.fieldAgent.description,
         canSubmit: true,
       };
     }

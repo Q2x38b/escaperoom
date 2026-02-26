@@ -75,23 +75,25 @@ export function RoomLobby() {
           <CardContent className="space-y-6">
             {/* Nickname input */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-white">
+              <label htmlFor="nickname" className="text-sm font-medium text-white cursor-pointer">
                 Your Codename
               </label>
               <Input
+                id="nickname"
                 type="text"
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
                 placeholder="Enter your codename"
                 maxLength={20}
                 disabled={isConnecting}
+                required
                 className="bg-white/10 border-white/40 text-white placeholder:text-white/60"
               />
             </div>
 
             {(validationError || connectionError) && (
-              <div className="flex items-start gap-2 text-destructive text-sm bg-destructive/10 p-3 rounded-lg">
-                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <div role="alert" className="flex items-start gap-2 text-destructive text-sm bg-destructive/10 p-3 rounded-lg">
+                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden="true" />
                 <span>{validationError || connectionError}</span>
               </div>
             )}
@@ -99,14 +101,15 @@ export function RoomLobby() {
             {/* Create Room */}
             <div className="space-y-3">
               <Button
+                type="button"
                 onClick={handleCreateRoom}
                 disabled={isConnecting || !nickname.trim()}
                 className="w-full bg-white text-black hover:bg-white/90"
               >
                 {isConnecting ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />
                 ) : (
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
                 )}
                 {isConnecting ? 'Creating...' : 'Create Investigation Room'}
               </Button>
@@ -120,37 +123,38 @@ export function RoomLobby() {
             </div>
 
             {/* Join Room */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-white">
+            <form onSubmit={(e) => { e.preventDefault(); handleJoinRoom(); }} className="space-y-3">
+              <label htmlFor="roomCode" className="text-sm font-medium text-white cursor-pointer">
                 Room Code
               </label>
               <div className="flex gap-2">
                 <Input
+                  id="roomCode"
                   type="text"
                   value={roomCode}
                   onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                  onKeyDown={(e) => e.key === 'Enter' && !isConnecting && nickname.trim() && roomCode.trim() && handleJoinRoom()}
                   placeholder="XXXXXXXX"
                   maxLength={8}
                   disabled={isConnecting}
                   className="font-mono tracking-widest bg-white/10 border-white/40 text-white text-center placeholder:text-white/60"
                 />
                 <Button
-                  onClick={handleJoinRoom}
+                  type="submit"
                   disabled={isConnecting || !nickname.trim() || !roomCode.trim()}
                   variant="secondary"
+                  aria-label="Join room"
                 >
                   {isConnecting ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
                   ) : (
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="w-4 h-4" aria-hidden="true" />
                   )}
                 </Button>
               </div>
               {!nickname.trim() && roomCode.trim() && (
-                <p className="text-xs text-amber-400">Enter your codename above first</p>
+                <p className="text-xs text-amber-400" role="alert">Enter your codename above first</p>
               )}
-            </div>
+            </form>
 
             {/* Info */}
             <div className="bg-white/5 rounded-lg p-4 space-y-2 border border-white/20">
