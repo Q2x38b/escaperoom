@@ -109,6 +109,7 @@ export function RoomLobby() {
                   type="text"
                   value={roomCode}
                   onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => e.key === 'Enter' && nickname.trim() && roomCode.trim() && handleJoinRoom()}
                   placeholder="XXXXXXXX"
                   maxLength={8}
                   className="font-mono tracking-widest bg-black/30 text-center"
@@ -121,6 +122,9 @@ export function RoomLobby() {
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               </div>
+              {!nickname.trim() && roomCode.trim() && (
+                <p className="text-xs text-amber-400">Enter your codename above first</p>
+              )}
             </div>
 
             {/* Info */}
