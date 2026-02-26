@@ -17,6 +17,20 @@ interface RolePuzzleProps {
   puzzleIndex: number;
 }
 
+// Type for the role puzzle data from Convex
+interface RolePuzzleData {
+  role: 'analyst' | 'decoder' | 'fieldAgent';
+  title: string;
+  description: string;
+  canSubmit: boolean;
+  data?: string[];
+  decoderData?: {
+    title: string;
+    data: string[];
+    description: string;
+  };
+}
+
 const ROLE_ICONS = {
   analyst: Eye,
   decoder: Key,
@@ -165,6 +179,9 @@ export function RolePuzzle({ puzzleIndex }: RolePuzzleProps) {
     );
   }
 
+  // Cast to our typed interface
+  const puzzleData = rolePuzzleData as RolePuzzleData;
+
   return (
     <Card className="bank-card">
       <CardHeader className="pb-4">
@@ -172,10 +189,10 @@ export function RolePuzzle({ puzzleIndex }: RolePuzzleProps) {
           <div>
             <CardTitle className="text-lg flex items-center gap-2">
               <RoleIcon className="w-5 h-5" />
-              {rolePuzzleData.title}
+              {puzzleData.title}
             </CardTitle>
             <CardDescription className="mt-1">
-              {rolePuzzleData.description}
+              {puzzleData.description}
             </CardDescription>
           </div>
           <Badge
@@ -209,7 +226,7 @@ export function RolePuzzle({ puzzleIndex }: RolePuzzleProps) {
         </div>
 
         {/* Role-specific data for Analyst */}
-        {currentPlayerRole === 'analyst' && rolePuzzleData.data && (
+        {currentPlayerRole === 'analyst' && puzzleData.data && (
           <div className="rounded-xl border border-blue-500/30 bg-blue-500/5 overflow-hidden">
             <div className="px-4 py-3 border-b border-blue-500/20 bg-blue-500/10">
               <span className="text-sm font-medium text-blue-400 flex items-center gap-2">
@@ -218,7 +235,7 @@ export function RolePuzzle({ puzzleIndex }: RolePuzzleProps) {
               </span>
             </div>
             <div className="p-4 space-y-2">
-              {rolePuzzleData.data.map((line, idx) => (
+              {puzzleData.data.map((line: string, idx: number) => (
                 <div
                   key={idx}
                   className="font-mono text-sm text-white py-1.5 px-3 bg-white/5 rounded"
@@ -231,7 +248,7 @@ export function RolePuzzle({ puzzleIndex }: RolePuzzleProps) {
         )}
 
         {/* Role-specific data for Decoder */}
-        {currentPlayerRole === 'decoder' && rolePuzzleData.data && (
+        {currentPlayerRole === 'decoder' && puzzleData.data && (
           <div className="rounded-xl border border-purple-500/30 bg-purple-500/5 overflow-hidden">
             <div className="px-4 py-3 border-b border-purple-500/20 bg-purple-500/10">
               <span className="text-sm font-medium text-purple-400 flex items-center gap-2">
@@ -240,7 +257,7 @@ export function RolePuzzle({ puzzleIndex }: RolePuzzleProps) {
               </span>
             </div>
             <div className="p-4 space-y-2">
-              {rolePuzzleData.data.map((line, idx) => (
+              {puzzleData.data.map((line: string, idx: number) => (
                 <div
                   key={idx}
                   className="font-mono text-xs text-white/90 py-1.5 px-3 bg-white/5 rounded"
@@ -265,16 +282,16 @@ export function RolePuzzle({ puzzleIndex }: RolePuzzleProps) {
             </div>
 
             {/* 2-player mode: Field Agent also sees decoder data */}
-            {rolePuzzleData.decoderData && (
+            {puzzleData.decoderData && (
               <div className="rounded-xl border border-purple-500/30 bg-purple-500/5 overflow-hidden">
                 <div className="px-4 py-3 border-b border-purple-500/20 bg-purple-500/10">
                   <span className="text-sm font-medium text-purple-400 flex items-center gap-2">
                     <Key className="w-4 h-4" />
-                    {rolePuzzleData.decoderData.title}
+                    {puzzleData.decoderData.title}
                   </span>
                 </div>
                 <div className="p-4 space-y-2">
-                  {rolePuzzleData.decoderData.data.map((line, idx) => (
+                  {puzzleData.decoderData.data.map((line: string, idx: number) => (
                     <div
                       key={idx}
                       className="font-mono text-xs text-white/90 py-1.5 px-3 bg-white/5 rounded"
@@ -289,7 +306,7 @@ export function RolePuzzle({ puzzleIndex }: RolePuzzleProps) {
         )}
 
         {/* Answer input - only field agent can submit */}
-        {rolePuzzleData.canSubmit ? (
+        {puzzleData.canSubmit ? (
           <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-3">
             <div className="flex items-center justify-between">
               <label htmlFor={`puzzle${puzzleIndex}-answer`} className="text-sm font-medium text-white cursor-pointer">
@@ -351,7 +368,7 @@ export function RolePuzzle({ puzzleIndex }: RolePuzzleProps) {
         )}
 
         {/* Current answer display for non-field agents */}
-        {!rolePuzzleData.canSubmit && answer && (
+        {!puzzleData.canSubmit && answer && (
           <div className="p-3 rounded-lg bg-white/5 border border-white/20">
             <span className="text-xs text-white/60">Current team answer: </span>
             <span className="font-mono text-white">{answer}</span>
