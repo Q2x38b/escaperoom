@@ -1,8 +1,11 @@
+export type PlayerRole = 'analyst' | 'decoder' | 'fieldAgent';
+
 export interface Player {
   id: string;
   nickname: string;
   isHost: boolean;
   isReady?: boolean;
+  role?: PlayerRole;
 }
 
 export interface GameState {

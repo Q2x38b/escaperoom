@@ -4,10 +4,8 @@ import { BankHeader } from '../bank-ui/BankHeader';
 import { ProgressTracker } from '../bank-ui/ProgressTracker';
 import { ChatPanel } from '../game/ChatPanel';
 import { HostMenu } from '../game/HostMenu';
-import { Puzzle1Hex } from './Puzzle1Hex';
-import { Puzzle2Base64 } from './Puzzle2Base64';
-import { Puzzle3Binary } from './Puzzle3Binary';
-import { Users, X } from 'lucide-react';
+import { RolePuzzle } from './RolePuzzle';
+import { Eye, Key, UserCheck, X } from 'lucide-react';
 
 export function PuzzleContainer() {
   const currentPuzzle = useGameStore((state) => state.currentPuzzle);
@@ -32,19 +30,6 @@ export function PuzzleContainer() {
     }
   }, [isHostMenuOpen]);
 
-  const renderPuzzle = () => {
-    switch (currentPuzzle) {
-      case 0:
-        return <Puzzle1Hex />;
-      case 1:
-        return <Puzzle2Base64 />;
-      case 2:
-        return <Puzzle3Binary />;
-      default:
-        return <Puzzle1Hex />;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <BankHeader
@@ -60,29 +45,41 @@ export function PuzzleContainer() {
           {/* Progress */}
           <ProgressTracker />
 
-          {/* Collaboration Tip */}
+          {/* Role-Based Collaboration Tip */}
           {showTip && (
-            <div className="flex items-start sm:items-center justify-between gap-2 sm:gap-4 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-white/5 border border-white/20 text-xs sm:text-sm">
-              <div className="flex items-start sm:items-center gap-2 text-white/90">
-                <Users className="w-4 h-4 shrink-0 mt-0.5 sm:mt-0" />
-                <span>
-                  <span className="text-white font-medium">Team mode:</span>
-                  <span className="hidden sm:inline"> Only one person can type at a time. Use chat to coordinate.</span>
-                  <span className="sm:hidden"> One types, others chat.</span>
+            <div className="flex flex-col gap-2 px-3 sm:px-4 py-3 rounded-lg bg-white/5 border border-white/20 text-xs sm:text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-white font-medium">Role-Based Teamwork</span>
+                <button
+                  onClick={() => setShowTip(false)}
+                  className="text-white/80 hover:text-white transition-colors p-1 rounded hover:bg-white/10 shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-3 text-white/80">
+                <span className="flex items-center gap-1">
+                  <Eye className="w-3.5 h-3.5 text-blue-400" />
+                  <span className="text-blue-400">Analyst</span> sees data
+                </span>
+                <span className="flex items-center gap-1">
+                  <Key className="w-3.5 h-3.5 text-purple-400" />
+                  <span className="text-purple-400">Decoder</span> has keys
+                </span>
+                <span className="flex items-center gap-1">
+                  <UserCheck className="w-3.5 h-3.5 text-green-400" />
+                  <span className="text-green-400">Field Agent</span> submits
                 </span>
               </div>
-              <button
-                onClick={() => setShowTip(false)}
-                className="text-white/80 hover:text-white transition-colors p-1 rounded hover:bg-white/10 shrink-0"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <p className="text-white/60 text-xs">
+                Share info via chat - no one can solve it alone!
+              </p>
             </div>
           )}
 
-          {/* Current Puzzle */}
+          {/* Current Puzzle - Role-based */}
           <div key={currentPuzzle} className="animate-in fade-in duration-300">
-            {renderPuzzle()}
+            <RolePuzzle puzzleIndex={currentPuzzle} />
           </div>
         </div>
       </main>

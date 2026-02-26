@@ -147,9 +147,6 @@ export function Puzzle1Hex() {
               International wire transfer routing information
             </CardDescription>
           </div>
-          <Badge variant="secondary" className="font-mono text-xs">
-            HEX ENCODED
-          </Badge>
         </div>
       </CardHeader>
 

@@ -36,6 +36,12 @@ export default defineSchema({
     isReady: v.boolean(),
     joinedAt: v.number(),
     lastSeen: v.number(),
+    // Role for collaborative puzzles: analyst sees data, decoder sees keys, fieldAgent submits
+    role: v.optional(v.union(
+      v.literal("analyst"),
+      v.literal("decoder"),
+      v.literal("fieldAgent")
+    )),
   })
     .index("by_room", ["roomId"])
     .index("by_identifier", ["odentifier"])

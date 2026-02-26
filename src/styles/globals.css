@@ -64,18 +64,38 @@
   html {
     background-color: oklch(0.145 0 0);
     overscroll-behavior: none;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
   }
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     overscroll-behavior: none;
     min-height: 100vh;
     min-height: 100dvh;
+    -webkit-tap-highlight-color: transparent;
   }
   #root {
     @apply bg-background;
     min-height: 100vh;
     min-height: 100dvh;
+  }
+
+  /* Selection styling */
+  ::selection {
+    background: oklch(0.488 0.243 264.376 / 0.3);
+    color: oklch(0.985 0 0);
+  }
+
+  /* Gradient text should unset gradient on selection */
+  .gradient-text::selection {
+    background: oklch(0.488 0.243 264.376 / 0.3);
+    -webkit-background-clip: unset;
+    background-clip: unset;
+    -webkit-text-fill-color: unset;
   }
 }
 
@@ -113,7 +133,8 @@
 
 /* Modern input styling */
 .puzzle-input {
-  @apply font-mono bg-background border border-input rounded-lg transition-all duration-200;
+  @apply font-mono bg-background border border-input rounded-lg;
+  transition: all 150ms ease-out;
   color: oklch(0.696 0.17 162.48);
 }
 
@@ -204,15 +225,27 @@
 
 /* Interactive button */
 .btn-interactive {
-  @apply relative overflow-hidden transition-all duration-200;
+  @apply relative overflow-hidden;
+  user-select: none;
+  transition: all 150ms ease-out;
 }
 
-.btn-interactive:hover {
-  @apply brightness-110;
+/* Only apply hover on devices that support it */
+@media (hover: hover) {
+  .btn-interactive:hover {
+    @apply brightness-110;
+  }
 }
 
 .btn-interactive:active {
-  @apply scale-[0.98];
+  transform: scale(0.96);
+}
+
+/* Decorative elements should not capture pointer events */
+.decorative,
+.glow-effect::before,
+.glow-effect::after {
+  pointer-events: none;
 }
 
 /* Modern scrollbar */
@@ -240,7 +273,7 @@
 }
 
 .data-row {
-  @apply flex justify-between items-center py-2 border-b border-border/30 last:border-0;
+  @apply flex justify-between items-center py-2 border-b border-white/30 last:border-0;
 }
 
 .data-label {
@@ -291,4 +324,54 @@
 
 .progress-step-pending {
   @apply bg-muted text-muted-foreground;
+}
+
+/* Tabular figures for timers and numbers to prevent layout shift */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Interactive elements should disable user-select */
+button,
+[role="button"],
+.interactive {
+  user-select: none;
+}
+
+/* Hover states only on devices that support hover */
+@media (hover: hover) {
+  .hover-effect:hover {
+    @apply bg-white/10;
+  }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Pause animations when not visible */
+.animate-on-visible {
+  animation-play-state: paused;
+}
+
+.animate-on-visible.is-visible {
+  animation-play-state: running;
+}
+
+/* Prevent theme switch transitions */
+html.theme-transitioning * {
+  transition: none !important;
+}
+
+/* Focus ring using box-shadow for better radius support */
+.focus-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
 }

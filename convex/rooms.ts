@@ -453,6 +453,16 @@ export const endGame = mutation({
       throw new Error("Only the host can end the game");
     }
 
+    // Clear player roles
+    const players = await ctx.db
+      .query("players")
+      .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+      .collect();
+
+    for (const player of players) {
+      await ctx.db.patch(player._id, { role: undefined });
+    }
+
     // Reset room to waiting state by replacing the document
     // We need to use replace instead of patch because Convex doesn't allow undefined values in patch
     await ctx.db.replace(args.roomId, {

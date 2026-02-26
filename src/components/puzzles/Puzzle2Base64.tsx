@@ -147,9 +147,6 @@ export function Puzzle2Base64() {
               Encoded transaction records from the Vance account
             </CardDescription>
           </div>
-          <Badge variant="secondary" className="font-mono text-xs">
-            BASE64 ENCODED
-          </Badge>
         </div>
       </CardHeader>
 
@@ -259,15 +256,6 @@ export function Puzzle2Base64() {
               </div>
             </div>
           ))}
-        </div>
-
-        {/* Encoding hint */}
-        <div className="flex gap-3 p-3 rounded-lg bg-white/5 border border-white/20 text-sm">
-          <AlertCircle className="w-4 h-4 text-white/90 shrink-0 mt-0.5" />
-          <div className="text-white/90">
-            <span className="text-white font-medium">Base64 encoding: </span>
-            Uses A-Z, a-z, 0-9, +, / and = for padding. Common in emails and URLs.
-          </div>
         </div>
 
         {/* Answer input */}

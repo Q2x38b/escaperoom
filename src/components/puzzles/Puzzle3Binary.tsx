@@ -132,9 +132,6 @@ export function Puzzle3Binary() {
               Encrypted binary data from the secure server
             </CardDescription>
           </div>
-          <Badge variant="secondary" className="font-mono text-xs">
-            BINARY DATA
-          </Badge>
         </div>
       </CardHeader>
 
@@ -186,15 +183,6 @@ export function Puzzle3Binary() {
                 )}
               </div>
             ))}
-          </div>
-        </div>
-
-        {/* Encoding hint */}
-        <div className="flex gap-3 p-3 rounded-lg bg-white/5 border border-white/20 text-sm">
-          <AlertCircle className="w-4 h-4 text-white/90 shrink-0 mt-0.5" />
-          <div className="text-white/90">
-            <span className="text-white font-medium">Binary encoding: </span>
-            8 bits = 1 char. Convert to decimal, then ASCII. Example: 01000001 = 65 = 'A'
           </div>
         </div>
 

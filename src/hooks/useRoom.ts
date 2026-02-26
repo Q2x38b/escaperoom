@@ -22,15 +22,26 @@ export interface TypingPlayer {
   timestamp: number;
 }
 
+export interface RolePuzzleData {
+  role: 'analyst' | 'decoder' | 'fieldAgent';
+  title: string;
+  description: string;
+  data?: string[];
+  decoderData?: { title: string; data: string[]; description: string };
+  canSubmit: boolean;
+}
+
 export interface UseRoomReturn {
   isConnected: boolean;
   isConnecting: boolean;
   isRestoring: boolean;
   connectionError: string | null;
   roomCode: string | null;
+  roomId: Id<"rooms"> | null;
   isLocked: boolean;
   typingPlayer: TypingPlayer | null;
   currentPlayerId: string;
+  currentPlayerRole: 'analyst' | 'decoder' | 'fieldAgent' | null;
   createRoom: (nickname: string) => Promise<void>;
   joinRoom: (roomCode: string, nickname: string) => Promise<void>;
   leaveRoom: () => Promise<void>;
@@ -162,12 +173,13 @@ export function useRoom(): UseRoomReturn {
   // Sync room data to store
   useEffect(() => {
     if (roomData) {
-      // Update players
+      // Update players (including roles)
       const players = roomData.players.map((p) => ({
         id: p.odentifier,
         nickname: p.nickname,
         isHost: p.isHost,
         isReady: p.isReady,
+        role: p.role as 'analyst' | 'decoder' | 'fieldAgent' | undefined,
       }));
       updatePlayers(players);
 
@@ -534,15 +546,20 @@ export function useRoom(): UseRoomReturn {
   const typingPlayer = roomData?.typingPlayer || null;
   const isLocked = roomData?.isLocked || false;
 
+  // Get current player's role
+  const currentPlayerRole = roomData?.players.find(p => p.odentifier === identifier)?.role as 'analyst' | 'decoder' | 'fieldAgent' | null || null;
+
   return {
     isConnected: roomId !== null && roomData !== undefined,
     isConnecting,
     isRestoring,
     connectionError,
     roomCode: roomData?.code || null,
+    roomId,
     isLocked,
     typingPlayer,
     currentPlayerId: identifier,
+    currentPlayerRole,
     createRoom,
     joinRoom,
     leaveRoom,

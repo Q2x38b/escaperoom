@@ -31,35 +31,59 @@ export function ProgressTracker() {
       </div>
 
       {/* Progress steps */}
-      <div className="flex items-center gap-1">
-        {PUZZLE_NAMES.map((name, index) => {
-          const isSolved = solvedPuzzles.includes(index);
-          const isCurrent = currentPuzzle === index;
-          const isLocked = index > currentPuzzle;
+      <div className="flex flex-col gap-2">
+        {/* Circles and connectors row */}
+        <div className="flex items-center">
+          {PUZZLE_NAMES.map((_, index) => {
+            const isSolved = solvedPuzzles.includes(index);
+            const isCurrent = currentPuzzle === index;
+            const isLocked = index > currentPuzzle;
 
-          return (
-            <div key={index} className="flex-1 flex items-center">
-              {/* Step */}
-              <div className="flex flex-col items-center flex-1">
-                <div
-                  className={cn(
-                    'w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium transition-all',
-                    isSolved && 'bg-green-500/20 text-green-400 ring-1 ring-green-500/30',
-                    isCurrent && !isSolved && 'bg-white text-black ring-2 ring-white/30',
-                    isLocked && 'bg-white/10 text-white/70'
-                  )}
-                >
-                  {isSolved ? (
-                    <Check className="w-4 h-4" />
-                  ) : isLocked ? (
-                    <Lock className="w-3.5 h-3.5" />
-                  ) : (
-                    <span>{index + 1}</span>
-                  )}
+            return (
+              <div key={index} className="flex-1 flex items-center">
+                <div className="flex-1 flex justify-center">
+                  <div
+                    className={cn(
+                      'w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium transition-all',
+                      isSolved && 'bg-green-500/20 text-green-400 ring-1 ring-green-500/30',
+                      isCurrent && !isSolved && 'bg-white text-black ring-2 ring-white/30',
+                      isLocked && 'bg-white/10 text-white/70'
+                    )}
+                  >
+                    {isSolved ? (
+                      <Check className="w-4 h-4" />
+                    ) : isLocked ? (
+                      <Lock className="w-3.5 h-3.5" />
+                    ) : (
+                      <span>{index + 1}</span>
+                    )}
+                  </div>
                 </div>
+                {/* Connector */}
+                {index < PUZZLE_NAMES.length - 1 && (
+                  <div
+                    className={cn(
+                      'h-px w-full transition-colors',
+                      isSolved ? 'bg-green-500/50' : 'bg-white/20'
+                    )}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {/* Labels row */}
+        <div className="flex">
+          {PUZZLE_NAMES.map((name, index) => {
+            const isSolved = solvedPuzzles.includes(index);
+            const isCurrent = currentPuzzle === index;
+            const isLocked = index > currentPuzzle;
+
+            return (
+              <div key={index} className="flex-1 text-center">
                 <span
                   className={cn(
-                    'text-[10px] sm:text-[11px] mt-1.5 sm:mt-2 text-center',
+                    'text-[10px] sm:text-[11px]',
                     isSolved && 'text-green-400',
                     isCurrent && !isSolved && 'text-white font-medium',
                     isLocked && 'text-white/70'
@@ -69,19 +93,9 @@ export function ProgressTracker() {
                   <span className="sm:hidden">{PUZZLE_NAMES_SHORT[index]}</span>
                 </span>
               </div>
-
-              {/* Connector */}
-              {index < PUZZLE_NAMES.length - 1 && (
-                <div
-                  className={cn(
-                    'h-px flex-1 mx-2 mb-6 transition-colors',
-                    isSolved ? 'bg-green-500/50' : 'bg-white/20'
-                  )}
-                />
-              )}
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       {/* Progress bar */}
