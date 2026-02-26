@@ -203,9 +203,13 @@ export function useRoom(): UseRoomReturn {
         }
       }
 
-      // Update game phase
+      // Update game phase - only call storeStartGame when transitioning INTO playing phase
+      // to avoid resetting currentPuzzle and solvedPuzzles during gameplay
       if (roomData.phase === "playing" && roomData.startTime) {
-        storeStartGame(roomData.startTime);
+        const currentPhase = useGameStore.getState().phase;
+        if (currentPhase !== "playing") {
+          storeStartGame(roomData.startTime);
+        }
       } else if (roomData.phase === "victory" && roomData.finalPasscode && roomData.completionTime) {
         setVictory(roomData.finalPasscode, roomData.completionTime);
       } else if (roomData.phase === "waiting") {

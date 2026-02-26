@@ -81,7 +81,7 @@ export function PuzzleContainer() {
           )}
 
           {/* Current Puzzle */}
-          <div className="animate-in fade-in duration-300">
+          <div key={currentPuzzle} className="animate-in fade-in duration-300">
             {renderPuzzle()}
           </div>
         </div>
