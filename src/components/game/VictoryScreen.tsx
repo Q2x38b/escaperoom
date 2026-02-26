@@ -110,7 +110,7 @@ export function VictoryScreen() {
                 <span>Aircraft Registration Number</span>
               </div>
 
-              <div className="bg-black/50 border border-green-500/30 rounded-lg p-6 text-center">
+              <div className="bg-card border border-green-500/30 rounded-lg p-6 text-center">
                 {showPasscode ? (
                   <>
                     <div className="text-xs text-green-400 font-mono mb-2">

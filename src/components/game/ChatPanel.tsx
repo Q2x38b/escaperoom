@@ -88,7 +88,7 @@ export function ChatPanel() {
       >
         <div className="glass-card rounded-xl overflow-hidden shadow-2xl">
           {/* Header */}
-          <div className="px-4 py-3 border-b border-border/50 flex items-center justify-between">
+          <div className="px-4 py-3 border-b border-foreground/10 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4 text-primary" />
               <span className="font-medium text-sm">Team Chat</span>
@@ -139,14 +139,14 @@ export function ChatPanel() {
           </div>
 
           {/* Input */}
-          <div className="p-3 border-t border-border/50">
+          <div className="p-3 border-t border-foreground/10">
             <div className="flex gap-2">
               <Input
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Type a message..."
-                className="flex-1 h-9 text-sm bg-black/30"
+                className="flex-1 h-9 text-sm bg-card border-foreground/20"
               />
               <Button
                 size="icon"

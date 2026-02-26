@@ -37,13 +37,13 @@ export function EntryScreen() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-card border border-border mb-4">
-            <Lock className="w-8 h-8 text-muted-foreground" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full border-2 border-foreground/20 mb-4">
+            <Lock className="w-8 h-8 text-foreground/70" />
           </div>
-          <div className="font-mono text-xs text-muted-foreground mb-2">
+          <div className="font-mono text-sm text-foreground/80 tracking-widest mb-2">
             SECURE ACCESS TERMINAL
           </div>
-          <div className="h-px bg-border w-32 mx-auto" />
+          <div className="h-px bg-foreground/20 w-32 mx-auto" />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -57,13 +57,13 @@ export function EntryScreen() {
               }}
               onKeyDown={handleKeyDown}
               placeholder="ENTER PASSCODE"
-              className="font-mono text-center tracking-widest bg-black/50 border-border/50 h-12 text-lg"
+              className="font-mono text-center tracking-widest bg-card border-foreground/20 h-12 text-lg placeholder:text-foreground/40"
               autoFocus
               disabled={isChecking}
             />
             {isChecking && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                <div className="w-5 h-5 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-foreground/50 border-t-transparent rounded-full animate-spin" />
               </div>
             )}
           </div>
@@ -85,7 +85,7 @@ export function EntryScreen() {
         </form>
 
         <div className="mt-8 text-center">
-          <span className="font-mono text-xs text-muted-foreground/50 cursor-blink">
+          <span className="font-mono text-xs text-foreground/40 cursor-blink">
             Awaiting input
           </span>
         </div>

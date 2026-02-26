@@ -55,8 +55,8 @@ export function WaitingRoom() {
 
           <CardContent className="space-y-6">
             {/* Room Code */}
-            <div className="bg-black/30 rounded-lg p-6 text-center">
-              <div className="text-xs text-muted-foreground mb-2 font-mono">ROOM CODE</div>
+            <div className="bg-muted/50 border border-foreground/10 rounded-lg p-6 text-center">
+              <div className="text-xs text-foreground/60 mb-2 font-mono">ROOM CODE</div>
               <div className="flex items-center justify-center gap-3">
                 <span className="text-3xl font-mono tracking-[0.3em] text-primary">
                   {displayCode}
@@ -81,7 +81,7 @@ export function WaitingRoom() {
             {/* Connected Players */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground">
+                <span className="text-sm font-medium text-foreground/70">
                   Investigation Team
                 </span>
                 <Badge variant={canStart ? 'success' : 'warning'}>
@@ -103,7 +103,7 @@ export function WaitingRoom() {
                       <span className="font-medium">
                         {player.nickname}
                         {player.id === playerId && (
-                          <span className="text-xs text-muted-foreground ml-2">(you)</span>
+                          <span className="text-xs text-foreground/50 ml-2">(you)</span>
                         )}
                       </span>
                     </div>
@@ -134,7 +134,7 @@ export function WaitingRoom() {
                 {Array.from({ length: 4 - players.length }).map((_, i) => (
                   <div
                     key={`empty-${i}`}
-                    className="flex items-center justify-center bg-muted/10 border border-dashed border-border/50 rounded-lg px-4 py-3 text-muted-foreground/50"
+                    className="flex items-center justify-center bg-muted/10 border border-dashed border-foreground/20 rounded-lg px-4 py-3 text-foreground/40"
                   >
                     <span className="text-sm">Waiting for investigator...</span>
                   </div>
@@ -166,7 +166,7 @@ export function WaitingRoom() {
                   )}
                 </Button>
                 {!canStart && (
-                  <p className="text-xs text-center text-muted-foreground">
+                  <p className="text-xs text-center text-foreground/50">
                     Need at least 2 investigators to begin
                   </p>
                 )}
@@ -205,8 +205,8 @@ export function WaitingRoom() {
               </div>
             ) : (
               <div className="text-center py-4">
-                <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">
+                <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-foreground/50" />
+                <p className="text-sm text-foreground/60">
                   Waiting for host to start the investigation...
                 </p>
               </div>
@@ -215,7 +215,7 @@ export function WaitingRoom() {
             {/* Mission Briefing */}
             <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
               <div className="text-xs text-amber-400 font-mono mb-2">MISSION BRIEFING</div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-foreground/70">
                 Intelligence suggests the Vance family has been moving large sums through
                 offshore accounts. Your team must trace the money trail and uncover their
                 secrets. Work together to decode encrypted financial records.
@@ -227,7 +227,7 @@ export function WaitingRoom() {
               <Info className="w-4 h-4 text-blue-400" />
               <AlertDescription className="text-sm">
                 <div className="font-medium text-blue-400 mb-2">How to Play</div>
-                <ul className="space-y-1 text-muted-foreground text-xs">
+                <ul className="space-y-1 text-foreground/70 text-xs">
                   <li className="flex items-start gap-2">
                     <span className="text-blue-400">1.</span>
                     <span>Work together to solve 3 decoding puzzles (hex, base64, binary)</span>

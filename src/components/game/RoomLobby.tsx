@@ -75,7 +75,7 @@ export function RoomLobby() {
           <CardContent className="space-y-6">
             {/* Nickname input */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">
+              <label className="text-sm font-medium text-foreground/70">
                 Your Codename
               </label>
               <Input
@@ -85,7 +85,7 @@ export function RoomLobby() {
                 placeholder="Enter your codename"
                 maxLength={20}
                 disabled={isConnecting}
-                className="bg-black/30"
+                className="bg-card border-foreground/20"
               />
             </div>
 
@@ -121,7 +121,7 @@ export function RoomLobby() {
 
             {/* Join Room */}
             <div className="space-y-3">
-              <label className="text-sm font-medium text-muted-foreground">
+              <label className="text-sm font-medium text-foreground/70">
                 Room Code
               </label>
               <div className="flex gap-2">
@@ -133,7 +133,7 @@ export function RoomLobby() {
                   placeholder="XXXXXXXX"
                   maxLength={8}
                   disabled={isConnecting}
-                  className="font-mono tracking-widest bg-black/30 text-center"
+                  className="font-mono tracking-widest bg-card border-foreground/20 text-center"
                 />
                 <Button
                   onClick={handleJoinRoom}
@@ -153,12 +153,12 @@ export function RoomLobby() {
             </div>
 
             {/* Info */}
-            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2 border border-foreground/10">
+              <div className="flex items-center gap-2 text-sm text-foreground/70">
                 <Users className="w-4 h-4" />
                 <span>Requires 2+ investigators to begin</span>
               </div>
-              <p className="text-xs text-muted-foreground/70 mt-2">
+              <p className="text-xs text-foreground/50 mt-2">
                 Don't have a codename? Pick any alias to identify yourself during the investigation.
               </p>
             </div>
