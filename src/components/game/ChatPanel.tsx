@@ -59,7 +59,7 @@ export function ChatPanel() {
         variant="outline"
         size="icon"
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 h-12 w-12 rounded-full shadow-lg bg-card border-border/50 hover:bg-accent"
+        className="fixed bottom-6 right-6 z-50 h-12 w-12 rounded-full shadow-lg bg-white/10 border-white/30 hover:bg-white/20 text-white"
       >
         {isOpen ? (
           <X className="h-5 w-5" />
@@ -88,12 +88,12 @@ export function ChatPanel() {
       >
         <div className="glass-card rounded-xl overflow-hidden shadow-2xl">
           {/* Header */}
-          <div className="px-4 py-3 border-b border-foreground/10 flex items-center justify-between">
+          <div className="px-4 py-3 border-b border-white/20 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <MessageSquare className="h-4 w-4 text-primary" />
-              <span className="font-medium text-sm">Team Chat</span>
+              <MessageSquare className="h-4 w-4 text-white" />
+              <span className="font-medium text-sm text-white">Team Chat</span>
             </div>
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs border-white/30 text-white/80">
               {players.length} online
             </Badge>
           </div>
@@ -101,7 +101,7 @@ export function ChatPanel() {
           {/* Messages */}
           <div className="h-64 overflow-y-auto p-3 space-y-3">
             {chatMessages.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+              <div className="h-full flex items-center justify-center text-white/60 text-sm">
                 <p>No messages yet. Start the conversation!</p>
               </div>
             ) : (
@@ -115,8 +115,8 @@ export function ChatPanel() {
                   <div
                     className={`max-w-[85%] rounded-lg px-3 py-2 ${
                       msg.playerId === currentPlayerId
-                        ? 'bg-primary/20 text-foreground'
-                        : 'bg-muted/50 text-foreground'
+                        ? 'bg-white/20 text-white'
+                        : 'bg-white/10 text-white'
                     }`}
                   >
                     {msg.playerId !== currentPlayerId && (
@@ -126,7 +126,7 @@ export function ChatPanel() {
                     )}
                     <p className="text-sm break-words">{msg.message}</p>
                   </div>
-                  <span className="text-[10px] text-muted-foreground mt-1 px-1">
+                  <span className="text-[10px] text-white/50 mt-1 px-1">
                     {new Date(msg.timestamp).toLocaleTimeString([], {
                       hour: '2-digit',
                       minute: '2-digit',
@@ -139,14 +139,14 @@ export function ChatPanel() {
           </div>
 
           {/* Input */}
-          <div className="p-3 border-t border-foreground/10">
+          <div className="p-3 border-t border-white/20">
             <div className="flex gap-2">
               <Input
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Type a message..."
-                className="flex-1 h-9 text-sm bg-card border-foreground/20"
+                className="flex-1 h-9 text-sm bg-white/10 border-white/30 text-white placeholder:text-white/50"
               />
               <Button
                 size="icon"

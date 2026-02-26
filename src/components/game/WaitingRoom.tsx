@@ -55,10 +55,10 @@ export function WaitingRoom() {
 
           <CardContent className="space-y-6">
             {/* Room Code */}
-            <div className="bg-muted/50 border border-foreground/10 rounded-lg p-6 text-center">
-              <div className="text-xs text-foreground/60 mb-2 font-mono">ROOM CODE</div>
+            <div className="bg-white/5 border border-white/20 rounded-lg p-6 text-center">
+              <div className="text-xs text-white/80 mb-2 font-mono">ROOM CODE</div>
               <div className="flex items-center justify-center gap-3">
-                <span className="text-3xl font-mono tracking-[0.3em] text-primary">
+                <span className="text-3xl font-mono tracking-[0.3em] text-white">
                   {displayCode}
                 </span>
                 <Button
@@ -81,7 +81,7 @@ export function WaitingRoom() {
             {/* Connected Players */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-foreground/70">
+                <span className="text-sm font-medium text-white">
                   Investigation Team
                 </span>
                 <Badge variant={canStart ? 'success' : 'warning'}>
@@ -94,16 +94,16 @@ export function WaitingRoom() {
                 {players.map((player) => (
                   <div
                     key={player.id}
-                    className="flex items-center justify-between bg-muted/30 rounded-lg px-4 py-3"
+                    className="flex items-center justify-between bg-white/10 rounded-lg px-4 py-3"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-medium">
+                      <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm font-medium text-white">
                         {player.nickname.charAt(0).toUpperCase()}
                       </div>
-                      <span className="font-medium">
+                      <span className="font-medium text-white">
                         {player.nickname}
                         {player.id === playerId && (
-                          <span className="text-xs text-foreground/50 ml-2">(you)</span>
+                          <span className="text-xs text-white/60 ml-2">(you)</span>
                         )}
                       </span>
                     </div>
@@ -115,7 +115,7 @@ export function WaitingRoom() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          className="h-7 w-7 text-white/60 hover:text-red-400 hover:bg-red-500/10"
                           onClick={() => handleKickPlayer(player.id)}
                           disabled={kickingPlayer === player.id}
                         >
@@ -134,7 +134,7 @@ export function WaitingRoom() {
                 {Array.from({ length: 4 - players.length }).map((_, i) => (
                   <div
                     key={`empty-${i}`}
-                    className="flex items-center justify-center bg-muted/10 border border-dashed border-foreground/20 rounded-lg px-4 py-3 text-foreground/40"
+                    className="flex items-center justify-center bg-white/5 border border-dashed border-white/30 rounded-lg px-4 py-3 text-white/50"
                   >
                     <span className="text-sm">Waiting for investigator...</span>
                   </div>
@@ -150,7 +150,7 @@ export function WaitingRoom() {
                 <Button
                   onClick={handleStartGame}
                   disabled={!canStart || isStarting}
-                  className="w-full"
+                  className="w-full bg-white text-black hover:bg-white/90"
                   size="lg"
                 >
                   {isStarting ? (
@@ -166,7 +166,7 @@ export function WaitingRoom() {
                   )}
                 </Button>
                 {!canStart && (
-                  <p className="text-xs text-center text-foreground/50">
+                  <p className="text-xs text-center text-white/60">
                     Need at least 2 investigators to begin
                   </p>
                 )}
@@ -185,7 +185,7 @@ export function WaitingRoom() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1"
+                      className="flex-1 border-white/30 text-white hover:bg-white/10"
                       onClick={() => setShowCloseConfirm(false)}
                     >
                       Cancel
@@ -195,7 +195,7 @@ export function WaitingRoom() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full text-muted-foreground"
+                    className="w-full text-white/70 border-white/30 hover:bg-white/10"
                     onClick={() => setShowCloseConfirm(true)}
                   >
                     <DoorClosed className="w-4 h-4 mr-2" />
@@ -205,8 +205,8 @@ export function WaitingRoom() {
               </div>
             ) : (
               <div className="text-center py-4">
-                <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-foreground/50" />
-                <p className="text-sm text-foreground/60">
+                <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-white/70" />
+                <p className="text-sm text-white/80">
                   Waiting for host to start the investigation...
                 </p>
               </div>
@@ -215,7 +215,7 @@ export function WaitingRoom() {
             {/* Mission Briefing */}
             <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
               <div className="text-xs text-amber-400 font-mono mb-2">MISSION BRIEFING</div>
-              <p className="text-sm text-foreground/70">
+              <p className="text-sm text-white/90">
                 Intelligence suggests the Vance family has been moving large sums through
                 offshore accounts. Your team must trace the money trail and uncover their
                 secrets. Work together to decode encrypted financial records.
@@ -227,7 +227,7 @@ export function WaitingRoom() {
               <Info className="w-4 h-4 text-blue-400" />
               <AlertDescription className="text-sm">
                 <div className="font-medium text-blue-400 mb-2">How to Play</div>
-                <ul className="space-y-1 text-foreground/70 text-xs">
+                <ul className="space-y-1 text-white/90 text-xs">
                   <li className="flex items-start gap-2">
                     <span className="text-blue-400">1.</span>
                     <span>Work together to solve 3 decoding puzzles (hex, base64, binary)</span>
