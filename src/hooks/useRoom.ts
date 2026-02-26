@@ -65,6 +65,7 @@ export function useRoom(): UseRoomReturn {
     solvePuzzle,
     setVictory,
     addChatMessage,
+    setChatMessages,
     updateSharedInput,
     setPhase,
     saveSession,
@@ -92,6 +93,12 @@ export function useRoom(): UseRoomReturn {
   // Convex queries (reactive)
   const roomData = useQuery(
     api.rooms.getRoom,
+    roomId ? { roomId } : "skip"
+  );
+
+  // Query chat messages from Convex
+  const chatMessagesData = useQuery(
+    api.game.getChatMessages,
     roomId ? { roomId } : "skip"
   );
 
@@ -196,6 +203,20 @@ export function useRoom(): UseRoomReturn {
       setPhase('entry');
     }
   }, [roomData, roomId, identifier, updatePlayers, updateSharedInput, solvePuzzle, storeStartGame, setVictory, setPhase, clearSession, setHost]);
+
+  // Sync chat messages from Convex
+  useEffect(() => {
+    if (chatMessagesData) {
+      const messages = chatMessagesData.map((msg) => ({
+        id: msg._id,
+        playerId: msg.playerId,
+        playerName: msg.playerName,
+        message: msg.message,
+        timestamp: msg.timestamp,
+      }));
+      setChatMessages(messages);
+    }
+  }, [chatMessagesData, setChatMessages]);
 
   const clearError = useCallback(() => {
     setConnectionError(null);

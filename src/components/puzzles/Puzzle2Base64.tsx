@@ -50,6 +50,8 @@ export function Puzzle2Base64() {
   const [hints, setHints] = useState<string[]>([]);
   const [hintIndex, setHintIndex] = useState(0);
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isLocallyTypingRef = useRef(false);
+  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { submitPuzzleAnswer, syncInput, claimTyping, releaseTyping, typingPlayer, currentPlayerId } = useRoom();
   const sharedInputs = useGameStore((state) => state.sharedInputs);
@@ -59,10 +61,17 @@ export function Puzzle2Base64() {
     typingPlayer.puzzleIndex === PUZZLE_INDEX &&
     Date.now() - typingPlayer.timestamp < 3000);
 
+  const isCurrentPlayerTyping = !!(typingPlayer &&
+    typingPlayer.odentifier === currentPlayerId &&
+    typingPlayer.puzzleIndex === PUZZLE_INDEX);
+
   useEffect(() => {
     return () => {
       if (typingIntervalRef.current) {
         clearInterval(typingIntervalRef.current);
+      }
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
       }
       releaseTyping();
     };
@@ -85,6 +94,7 @@ export function Puzzle2Base64() {
       clearInterval(typingIntervalRef.current);
       typingIntervalRef.current = null;
     }
+    isLocallyTypingRef.current = false;
     releaseTyping();
   }, [releaseTyping]);
 
@@ -93,18 +103,29 @@ export function Puzzle2Base64() {
   const hint2 = useQuery(api.game.getHint, { puzzleIndex: PUZZLE_INDEX, hintIndex: 2 });
   const allHints = [hint0, hint1, hint2];
 
+  // Sync from shared inputs only when another player is typing (not us)
   useEffect(() => {
     const sharedAnswer = sharedInputs[`puzzle${PUZZLE_INDEX}_answer`];
-    if (sharedAnswer && sharedAnswer !== answer) {
+    if (sharedAnswer !== undefined && !isLocallyTypingRef.current && !isCurrentPlayerTyping) {
       setAnswer(sharedAnswer);
     }
-  }, [sharedInputs, answer]);
+  }, [sharedInputs, isCurrentPlayerTyping]);
 
   const handleInputChange = (value: string) => {
     const upperValue = value.toUpperCase();
     setAnswer(upperValue);
     setError('');
-    syncInput(`puzzle${PUZZLE_INDEX}_answer`, upperValue);
+    isLocallyTypingRef.current = true;
+
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+    }
+    syncTimeoutRef.current = setTimeout(() => {
+      syncInput(`puzzle${PUZZLE_INDEX}_answer`, upperValue);
+      setTimeout(() => {
+        isLocallyTypingRef.current = false;
+      }, 500);
+    }, 100);
   };
 
   const handleSubmit = async () => {
@@ -152,19 +173,19 @@ export function Puzzle2Base64() {
 
       <CardContent className="space-y-5">
         {/* Mission brief */}
-        <div className="flex gap-3 p-4 rounded-lg bg-muted/50 border border-border">
-          <Info className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
-          <div className="text-sm text-muted-foreground">
-            <span className="text-foreground font-medium">Transaction Analysis: </span>
+        <div className="flex gap-3 p-4 rounded-lg bg-white/5 border border-white/20">
+          <Info className="w-5 h-5 text-white/70 shrink-0 mt-0.5" />
+          <div className="text-sm text-white/80">
+            <span className="text-white font-medium">Transaction Analysis: </span>
             The transaction descriptions have been encoded. Decode the flagged transaction
             (TXN-78291) to reveal important details about suspicious fund movements.
           </div>
         </div>
 
         {/* Transaction table */}
-        <div className="rounded-xl border border-border overflow-hidden">
+        <div className="rounded-xl border border-white/20 overflow-hidden">
           {/* Header */}
-          <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-muted/30 border-b border-border text-xs font-medium text-muted-foreground">
+          <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-white/5 border-b border-white/20 text-xs font-medium text-white/70">
             <div className="col-span-2">TXN ID</div>
             <div className="col-span-2">DATE</div>
             <div className="col-span-4">DESCRIPTION (ENCODED)</div>
@@ -176,21 +197,21 @@ export function Puzzle2Base64() {
           {TRANSACTIONS.map((txn) => (
             <div
               key={txn.id}
-              className={`grid grid-cols-12 gap-2 px-4 py-3 border-b border-border last:border-0 items-center ${
+              className={`grid grid-cols-12 gap-2 px-4 py-3 border-b border-white/20 last:border-0 items-center ${
                 txn.flagged ? 'bg-amber-500/5' : ''
               }`}
             >
               <div className="col-span-2 flex items-center gap-2">
-                <span className="font-mono text-sm">{txn.id}</span>
+                <span className="font-mono text-sm text-white">{txn.id}</span>
                 {txn.flagged && (
                   <Badge variant="outline" className="text-amber-500 border-amber-500/30 text-[10px] px-1.5">
                     FLAG
                   </Badge>
                 )}
               </div>
-              <div className="col-span-2 font-mono text-sm text-muted-foreground">{txn.date}</div>
+              <div className="col-span-2 font-mono text-sm text-white/70">{txn.date}</div>
               <div className="col-span-4">
-                <code className={`text-xs break-all ${txn.flagged ? 'encrypted-text' : 'text-muted-foreground'}`}>
+                <code className={`text-xs break-all ${txn.flagged ? 'encrypted-text' : 'text-white/60'}`}>
                   {txn.encoded}
                 </code>
               </div>
@@ -203,7 +224,7 @@ export function Puzzle2Base64() {
                       ? 'text-green-500 border-green-500/30'
                       : txn.type === 'Transfer'
                         ? 'text-blue-500 border-blue-500/30'
-                        : 'text-muted-foreground'
+                        : 'text-white/70'
                   }`}
                 >
                   {txn.type}
@@ -214,10 +235,10 @@ export function Puzzle2Base64() {
         </div>
 
         {/* Encoding hint */}
-        <div className="flex gap-3 p-3 rounded-lg bg-muted/30 border border-border text-sm">
-          <AlertCircle className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-          <div className="text-muted-foreground">
-            <span className="text-foreground font-medium">Base64 encoding: </span>
+        <div className="flex gap-3 p-3 rounded-lg bg-white/5 border border-white/20 text-sm">
+          <AlertCircle className="w-4 h-4 text-white/70 shrink-0 mt-0.5" />
+          <div className="text-white/80">
+            <span className="text-white font-medium">Base64 encoding: </span>
             Uses A-Z, a-z, 0-9, +, / and = for padding. Common in emails and URLs.
           </div>
         </div>
@@ -237,7 +258,7 @@ export function Puzzle2Base64() {
         {/* Answer input */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium">Decoded Transaction Description (TXN-78291)</label>
+            <label className="text-sm font-medium text-white">Decoded Transaction Description (TXN-78291)</label>
             {otherPlayerTyping && typingPlayer && (
               <TypingIndicator nickname={typingPlayer.nickname} />
             )}
@@ -248,8 +269,8 @@ export function Puzzle2Base64() {
                 type="text"
                 value={answer}
                 onChange={(e) => handleInputChange(e.target.value)}
-                placeholder={otherPlayerTyping ? `${typingPlayer?.nickname} is typing...` : "Enter decoded description"}
-                className={`font-mono uppercase h-10 ${otherPlayerTyping ? 'opacity-50 cursor-not-allowed' : ''}`}
+                placeholder={otherPlayerTyping ? `${typingPlayer?.nickname} is typing...` : "ENTER DECODED DESCRIPTION"}
+                className={`font-mono uppercase h-10 bg-white/10 border-white/30 text-white placeholder:text-white/50 ${otherPlayerTyping ? 'opacity-50 cursor-not-allowed' : ''}`}
                 disabled={otherPlayerTyping}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
@@ -290,7 +311,7 @@ export function Puzzle2Base64() {
               size="sm"
               onClick={handleHint}
               disabled={hintIndex >= 3}
-              className="text-muted-foreground h-8"
+              className="text-white/70 hover:text-white h-8"
             >
               <Lightbulb className="w-4 h-4 mr-2" />
               Hint ({3 - hintIndex})

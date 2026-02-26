@@ -44,6 +44,7 @@ interface GameStore {
   solvePuzzle: (puzzleIndex: number) => void;
   setVictory: (passcode: string, completionTime: number) => void;
   addChatMessage: (message: ChatMessage) => void;
+  setChatMessages: (messages: ChatMessage[]) => void;
   updateSharedInput: (key: string, value: string) => void;
   saveSession: (roomId: string, nickname: string) => void;
   clearSession: () => void;
@@ -111,6 +112,8 @@ export const useGameStore = create<GameStore>()(
       addChatMessage: (message) => set((state) => ({
         chatMessages: [...state.chatMessages, message],
       })),
+
+      setChatMessages: (messages) => set({ chatMessages: messages }),
 
       updateSharedInput: (key, value) => set((state) => ({
         sharedInputs: { ...state.sharedInputs, [key]: value },

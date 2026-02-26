@@ -35,6 +35,8 @@ export function Puzzle3Binary() {
   const [hints, setHints] = useState<string[]>([]);
   const [hintIndex, setHintIndex] = useState(0);
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isLocallyTypingRef = useRef(false);
+  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { submitPuzzleAnswer, syncInput, claimTyping, releaseTyping, typingPlayer, currentPlayerId } = useRoom();
   const sharedInputs = useGameStore((state) => state.sharedInputs);
@@ -44,10 +46,17 @@ export function Puzzle3Binary() {
     typingPlayer.puzzleIndex === PUZZLE_INDEX &&
     Date.now() - typingPlayer.timestamp < 3000);
 
+  const isCurrentPlayerTyping = !!(typingPlayer &&
+    typingPlayer.odentifier === currentPlayerId &&
+    typingPlayer.puzzleIndex === PUZZLE_INDEX);
+
   useEffect(() => {
     return () => {
       if (typingIntervalRef.current) {
         clearInterval(typingIntervalRef.current);
+      }
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
       }
       releaseTyping();
     };
@@ -70,6 +79,7 @@ export function Puzzle3Binary() {
       clearInterval(typingIntervalRef.current);
       typingIntervalRef.current = null;
     }
+    isLocallyTypingRef.current = false;
     releaseTyping();
   }, [releaseTyping]);
 
@@ -78,18 +88,29 @@ export function Puzzle3Binary() {
   const hint2 = useQuery(api.game.getHint, { puzzleIndex: PUZZLE_INDEX, hintIndex: 2 });
   const allHints = [hint0, hint1, hint2];
 
+  // Sync from shared inputs only when another player is typing (not us)
   useEffect(() => {
     const sharedAnswer = sharedInputs[`puzzle${PUZZLE_INDEX}_answer`];
-    if (sharedAnswer && sharedAnswer !== answer) {
+    if (sharedAnswer !== undefined && !isLocallyTypingRef.current && !isCurrentPlayerTyping) {
       setAnswer(sharedAnswer);
     }
-  }, [sharedInputs, answer]);
+  }, [sharedInputs, isCurrentPlayerTyping]);
 
   const handleInputChange = (value: string) => {
     const upperValue = value.toUpperCase();
     setAnswer(upperValue);
     setError('');
-    syncInput(`puzzle${PUZZLE_INDEX}_answer`, upperValue);
+    isLocallyTypingRef.current = true;
+
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+    }
+    syncTimeoutRef.current = setTimeout(() => {
+      syncInput(`puzzle${PUZZLE_INDEX}_answer`, upperValue);
+      setTimeout(() => {
+        isLocallyTypingRef.current = false;
+      }, 500);
+    }, 100);
   };
 
   const handleSubmit = async () => {
@@ -137,24 +158,24 @@ export function Puzzle3Binary() {
 
       <CardContent className="space-y-5">
         {/* Mission brief */}
-        <div className="flex gap-3 p-4 rounded-lg bg-muted/50 border border-border">
-          <Info className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
-          <div className="text-sm text-muted-foreground">
-            <span className="text-foreground font-medium">Hidden File Discovery: </span>
+        <div className="flex gap-3 p-4 rounded-lg bg-white/5 border border-white/20">
+          <Info className="w-5 h-5 text-white/70 shrink-0 mt-0.5" />
+          <div className="text-sm text-white/80">
+            <span className="text-white font-medium">Hidden File Discovery: </span>
             Our forensic team found a hidden file on the Vance family's secure server.
             Decode the first line to identify the asset purchased with the offshore funds.
           </div>
         </div>
 
         {/* File viewer */}
-        <div className="rounded-xl border border-border overflow-hidden">
+        <div className="rounded-xl border border-white/20 overflow-hidden">
           {/* File header */}
-          <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-muted/30">
+          <div className="px-4 py-3 border-b border-white/20 flex items-center justify-between bg-white/5">
             <div className="flex items-center gap-2">
-              <FileCode className="w-4 h-4 text-muted-foreground" />
-              <span className="font-mono text-sm">{BINARY_DATA.filename}</span>
+              <FileCode className="w-4 h-4 text-white/70" />
+              <span className="font-mono text-sm text-white">{BINARY_DATA.filename}</span>
             </div>
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <div className="flex items-center gap-4 text-xs text-white/60">
               <span>{BINARY_DATA.size}</span>
               <span>{BINARY_DATA.modified}</span>
             </div>
@@ -162,18 +183,18 @@ export function Puzzle3Binary() {
 
           {/* Binary content */}
           <div className="p-4 font-mono text-sm space-y-2">
-            <div className="text-xs text-muted-foreground mb-3">// Binary contents:</div>
+            <div className="text-xs text-white/60 mb-3">// Binary contents:</div>
             {BINARY_DATA.contents.map((line, index) => (
               <div
                 key={index}
                 className={`py-2.5 px-3 rounded-lg flex items-center gap-3 ${
                   index === 0
                     ? 'bg-amber-500/10 border border-amber-500/30'
-                    : 'bg-muted/30'
+                    : 'bg-white/5'
                 }`}
               >
-                <span className="text-muted-foreground text-xs w-6">{String(index + 1).padStart(2, '0')}</span>
-                <code className={`text-xs tracking-wide ${index === 0 ? 'encrypted-text' : 'text-muted-foreground'}`}>
+                <span className="text-white/50 text-xs w-6">{String(index + 1).padStart(2, '0')}</span>
+                <code className={`text-xs tracking-wide ${index === 0 ? 'encrypted-text' : 'text-white/60'}`}>
                   {line}
                 </code>
                 {index === 0 && (
@@ -187,10 +208,10 @@ export function Puzzle3Binary() {
         </div>
 
         {/* Encoding hint */}
-        <div className="flex gap-3 p-3 rounded-lg bg-muted/30 border border-border text-sm">
-          <AlertCircle className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-          <div className="text-muted-foreground">
-            <span className="text-foreground font-medium">Binary encoding: </span>
+        <div className="flex gap-3 p-3 rounded-lg bg-white/5 border border-white/20 text-sm">
+          <AlertCircle className="w-4 h-4 text-white/70 shrink-0 mt-0.5" />
+          <div className="text-white/80">
+            <span className="text-white font-medium">Binary encoding: </span>
             8 bits = 1 char. Convert to decimal, then ASCII. Example: 01000001 = 65 = 'A'
           </div>
         </div>
@@ -210,7 +231,7 @@ export function Puzzle3Binary() {
         {/* Answer input */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium">Decoded Asset Type (First Line)</label>
+            <label className="text-sm font-medium text-white">Decoded Asset Type (First Line)</label>
             {otherPlayerTyping && typingPlayer && (
               <TypingIndicator nickname={typingPlayer.nickname} />
             )}
@@ -221,8 +242,8 @@ export function Puzzle3Binary() {
                 type="text"
                 value={answer}
                 onChange={(e) => handleInputChange(e.target.value)}
-                placeholder={otherPlayerTyping ? `${typingPlayer?.nickname} is typing...` : "Enter decoded word"}
-                className={`font-mono uppercase h-10 ${otherPlayerTyping ? 'opacity-50 cursor-not-allowed' : ''}`}
+                placeholder={otherPlayerTyping ? `${typingPlayer?.nickname} is typing...` : "ENTER DECODED WORD"}
+                className={`font-mono uppercase h-10 bg-white/10 border-white/30 text-white placeholder:text-white/50 ${otherPlayerTyping ? 'opacity-50 cursor-not-allowed' : ''}`}
                 disabled={otherPlayerTyping}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
@@ -263,7 +284,7 @@ export function Puzzle3Binary() {
               size="sm"
               onClick={handleHint}
               disabled={hintIndex >= 3}
-              className="text-muted-foreground h-8"
+              className="text-white/70 hover:text-white h-8"
             >
               <Lightbulb className="w-4 h-4 mr-2" />
               Hint ({3 - hintIndex})

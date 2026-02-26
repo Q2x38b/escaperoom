@@ -36,16 +36,16 @@ export function PuzzleContainer() {
 
           {/* Collaboration Tip */}
           {showTip && (
-            <div className="flex items-center justify-between gap-4 px-4 py-2.5 rounded-lg bg-muted/50 border border-border text-sm">
-              <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="flex items-center justify-between gap-4 px-4 py-2.5 rounded-lg bg-white/5 border border-white/20 text-sm">
+              <div className="flex items-center gap-2 text-white/80">
                 <Users className="w-4 h-4 shrink-0" />
                 <span>
-                  <span className="text-foreground font-medium">Team mode:</span> Only one person can type at a time. Use chat to coordinate.
+                  <span className="text-white font-medium">Team mode:</span> Only one person can type at a time. Use chat to coordinate.
                 </span>
               </div>
               <button
                 onClick={() => setShowTip(false)}
-                className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded hover:bg-muted"
+                className="text-white/60 hover:text-white transition-colors p-1 rounded hover:bg-white/10"
               >
                 <X className="w-4 h-4" />
               </button>

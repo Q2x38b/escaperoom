@@ -43,6 +43,8 @@ export function Puzzle1Hex() {
   const [hints, setHints] = useState<string[]>([]);
   const [hintIndex, setHintIndex] = useState(0);
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isLocallyTypingRef = useRef(false);
+  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { submitPuzzleAnswer, syncInput, claimTyping, releaseTyping, typingPlayer, currentPlayerId } = useRoom();
   const sharedInputs = useGameStore((state) => state.sharedInputs);
@@ -53,11 +55,19 @@ export function Puzzle1Hex() {
     typingPlayer.puzzleIndex === PUZZLE_INDEX &&
     Date.now() - typingPlayer.timestamp < 3000);
 
+  // Check if current player is the one typing
+  const isCurrentPlayerTyping = !!(typingPlayer &&
+    typingPlayer.odentifier === currentPlayerId &&
+    typingPlayer.puzzleIndex === PUZZLE_INDEX);
+
   // Cleanup typing lock on unmount
   useEffect(() => {
     return () => {
       if (typingIntervalRef.current) {
         clearInterval(typingIntervalRef.current);
+      }
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
       }
       releaseTyping();
     };
@@ -80,6 +90,7 @@ export function Puzzle1Hex() {
       clearInterval(typingIntervalRef.current);
       typingIntervalRef.current = null;
     }
+    isLocallyTypingRef.current = false;
     releaseTyping();
   }, [releaseTyping]);
 
@@ -89,18 +100,32 @@ export function Puzzle1Hex() {
   const hint2 = useQuery(api.game.getHint, { puzzleIndex: PUZZLE_INDEX, hintIndex: 2 });
   const allHints = [hint0, hint1, hint2];
 
+  // Sync from shared inputs only when another player is typing (not us)
   useEffect(() => {
     const sharedAnswer = sharedInputs[`puzzle${PUZZLE_INDEX}_answer`];
-    if (sharedAnswer && sharedAnswer !== answer) {
+    // Only sync from remote if we're not the one typing
+    if (sharedAnswer !== undefined && !isLocallyTypingRef.current && !isCurrentPlayerTyping) {
       setAnswer(sharedAnswer);
     }
-  }, [sharedInputs, answer]);
+  }, [sharedInputs, isCurrentPlayerTyping]);
 
   const handleInputChange = (value: string) => {
     const upperValue = value.toUpperCase();
     setAnswer(upperValue);
     setError('');
-    syncInput(`puzzle${PUZZLE_INDEX}_answer`, upperValue);
+    isLocallyTypingRef.current = true;
+
+    // Debounce the sync to reduce race conditions
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+    }
+    syncTimeoutRef.current = setTimeout(() => {
+      syncInput(`puzzle${PUZZLE_INDEX}_answer`, upperValue);
+      // Allow remote updates after a brief delay
+      setTimeout(() => {
+        isLocallyTypingRef.current = false;
+      }, 500);
+    }, 100);
   };
 
   const handleSubmit = async () => {
@@ -148,30 +173,30 @@ export function Puzzle1Hex() {
 
       <CardContent className="space-y-5">
         {/* Mission brief */}
-        <div className="flex gap-3 p-4 rounded-lg bg-muted/50 border border-border">
-          <Info className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
-          <div className="text-sm text-muted-foreground">
-            <span className="text-foreground font-medium">Wire Transfer Intercept: </span>
+        <div className="flex gap-3 p-4 rounded-lg bg-white/5 border border-white/20">
+          <Info className="w-5 h-5 text-white/70 shrink-0 mt-0.5" />
+          <div className="text-sm text-white/80">
+            <span className="text-white font-medium">Wire Transfer Intercept: </span>
             We've intercepted a wire transfer connected to the $50,000 aircraft donation.
             The destination routing appears to be encoded in hexadecimal. Decode the location.
           </div>
         </div>
 
         {/* Transfer details card */}
-        <div className="rounded-xl border border-border overflow-hidden">
+        <div className="rounded-xl border border-white/20 overflow-hidden">
           {/* Header */}
-          <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-muted/30">
-            <span className="font-mono text-sm text-muted-foreground">{WIRE_TRANSFER.id}</span>
+          <div className="px-4 py-3 border-b border-white/20 flex items-center justify-between bg-white/5">
+            <span className="font-mono text-sm text-white/80">{WIRE_TRANSFER.id}</span>
             <Badge variant="outline" className="text-green-500 border-green-500/30 text-xs">
               {WIRE_TRANSFER.status}
             </Badge>
           </div>
 
           {/* Origin & Destination */}
-          <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
+          <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/20">
             {/* Origin */}
             <div className="p-4">
-              <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-3">
+              <div className="flex items-center gap-2 text-xs font-medium text-white/70 mb-3">
                 <Building className="w-3.5 h-3.5" />
                 ORIGIN
               </div>
@@ -229,27 +254,27 @@ export function Puzzle1Hex() {
           </div>
 
           {/* Transfer info footer */}
-          <div className="px-4 py-3 border-t border-border grid grid-cols-3 gap-4 bg-muted/20">
+          <div className="px-4 py-3 border-t border-white/20 grid grid-cols-3 gap-4 bg-white/5">
             <div>
-              <div className="text-xs text-muted-foreground mb-0.5">Amount</div>
+              <div className="text-xs text-white/70 mb-0.5">Amount</div>
               <div className="font-mono text-green-500">{WIRE_TRANSFER.amount}</div>
             </div>
             <div>
-              <div className="text-xs text-muted-foreground mb-0.5">Purpose</div>
-              <div className="text-sm truncate">{WIRE_TRANSFER.purpose}</div>
+              <div className="text-xs text-white/70 mb-0.5">Purpose</div>
+              <div className="text-sm text-white truncate">{WIRE_TRANSFER.purpose}</div>
             </div>
             <div>
-              <div className="text-xs text-muted-foreground mb-0.5">Date</div>
-              <div className="font-mono text-sm">{WIRE_TRANSFER.date}</div>
+              <div className="text-xs text-white/70 mb-0.5">Date</div>
+              <div className="font-mono text-sm text-white">{WIRE_TRANSFER.date}</div>
             </div>
           </div>
         </div>
 
         {/* Encoding hint */}
-        <div className="flex gap-3 p-3 rounded-lg bg-muted/30 border border-border text-sm">
-          <AlertCircle className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-          <div className="text-muted-foreground">
-            <span className="text-foreground font-medium">Hex encoding: </span>
+        <div className="flex gap-3 p-3 rounded-lg bg-white/5 border border-white/20 text-sm">
+          <AlertCircle className="w-4 h-4 text-white/70 shrink-0 mt-0.5" />
+          <div className="text-white/80">
+            <span className="text-white font-medium">Hex encoding: </span>
             Each pair = hex number (0-9, A-F) → decimal → ASCII. Example: 41 = 65 = 'A'
           </div>
         </div>
@@ -269,7 +294,7 @@ export function Puzzle1Hex() {
         {/* Answer input */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium">Decoded Destination Location</label>
+            <label className="text-sm font-medium text-white">Decoded Destination Location</label>
             {otherPlayerTyping && typingPlayer && (
               <TypingIndicator nickname={typingPlayer.nickname} />
             )}
@@ -280,8 +305,8 @@ export function Puzzle1Hex() {
                 type="text"
                 value={answer}
                 onChange={(e) => handleInputChange(e.target.value)}
-                placeholder={otherPlayerTyping ? `${typingPlayer?.nickname} is typing...` : "Enter decoded location"}
-                className={`font-mono uppercase h-10 ${otherPlayerTyping ? 'opacity-50 cursor-not-allowed' : ''}`}
+                placeholder={otherPlayerTyping ? `${typingPlayer?.nickname} is typing...` : "ENTER DECODED LOCATION"}
+                className={`font-mono uppercase h-10 bg-white/10 border-white/30 text-white placeholder:text-white/50 ${otherPlayerTyping ? 'opacity-50 cursor-not-allowed' : ''}`}
                 disabled={otherPlayerTyping}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
@@ -322,7 +347,7 @@ export function Puzzle1Hex() {
               size="sm"
               onClick={handleHint}
               disabled={hintIndex >= 3}
-              className="text-muted-foreground h-8"
+              className="text-white/70 hover:text-white h-8"
             >
               <Lightbulb className="w-4 h-4 mr-2" />
               Hint ({3 - hintIndex})

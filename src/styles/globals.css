@@ -244,11 +244,11 @@
 }
 
 .data-label {
-  @apply text-xs text-muted-foreground;
+  @apply text-xs text-white/70;
 }
 
 .data-value {
-  @apply text-sm font-mono;
+  @apply text-sm font-mono text-white;
 }
 
 /* Alert variants */

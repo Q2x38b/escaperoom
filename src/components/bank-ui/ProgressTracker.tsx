@@ -14,12 +14,12 @@ export function ProgressTracker() {
   const { currentPuzzle, solvedPuzzles } = useGameStore();
 
   return (
-    <div className="bg-card border border-border rounded-xl p-4">
+    <div className="bg-card border border-white/20 rounded-xl p-4">
       <div className="flex items-center justify-between mb-4">
-        <span className="text-xs text-muted-foreground font-medium tracking-wide">
+        <span className="text-xs text-white/80 font-medium tracking-wide">
           INVESTIGATION PROGRESS
         </span>
-        <span className="text-xs text-muted-foreground">
+        <span className="text-xs text-white/70">
           {solvedPuzzles.length}/{TOTAL_PUZZLES}
         </span>
       </div>
@@ -40,7 +40,7 @@ export function ProgressTracker() {
                     'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all',
                     isSolved && 'bg-green-500/20 text-green-400 ring-1 ring-green-500/30',
                     isCurrent && !isSolved && 'bg-primary text-primary-foreground ring-2 ring-primary/30',
-                    isLocked && 'bg-muted text-muted-foreground'
+                    isLocked && 'bg-white/10 text-white/50'
                   )}
                 >
                   {isSolved ? (
@@ -55,8 +55,8 @@ export function ProgressTracker() {
                   className={cn(
                     'text-[11px] mt-2 text-center',
                     isSolved && 'text-green-400',
-                    isCurrent && !isSolved && 'text-foreground font-medium',
-                    isLocked && 'text-muted-foreground'
+                    isCurrent && !isSolved && 'text-white font-medium',
+                    isLocked && 'text-white/50'
                   )}
                 >
                   {name}
@@ -68,7 +68,7 @@ export function ProgressTracker() {
                 <div
                   className={cn(
                     'h-px flex-1 mx-2 mb-6 transition-colors',
-                    isSolved ? 'bg-green-500/50' : 'bg-border'
+                    isSolved ? 'bg-green-500/50' : 'bg-white/20'
                   )}
                 />
               )}
@@ -78,7 +78,7 @@ export function ProgressTracker() {
       </div>
 
       {/* Progress bar */}
-      <div className="mt-4 h-1.5 bg-muted rounded-full overflow-hidden">
+      <div className="mt-4 h-1.5 bg-white/10 rounded-full overflow-hidden">
         <div
           className="h-full bg-gradient-to-r from-green-500 to-green-400 transition-all duration-500 rounded-full"
           style={{ width: `${(solvedPuzzles.length / TOTAL_PUZZLES) * 100}%` }}
