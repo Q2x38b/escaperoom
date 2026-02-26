@@ -45,7 +45,7 @@ export function ProgressTracker() {
                   className={cn(
                     'w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium transition-all',
                     isSolved && 'bg-green-500/20 text-green-400 ring-1 ring-green-500/30',
-                    isCurrent && !isSolved && 'bg-primary text-primary-foreground ring-2 ring-primary/30',
+                    isCurrent && !isSolved && 'bg-white text-black ring-2 ring-white/30',
                     isLocked && 'bg-white/10 text-white/70'
                   )}
                 >

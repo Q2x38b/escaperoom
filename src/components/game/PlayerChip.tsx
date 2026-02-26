@@ -16,7 +16,7 @@ export function PlayerChip({ className, showMax = true }: PlayerChipProps) {
     <Badge
       variant="outline"
       className={cn(
-        'gap-1.5 px-3 py-1',
+        'gap-1.5 px-3 py-1 text-white/90',
         count >= 2 && 'border-green-500/50 text-green-400',
         className
       )}
@@ -26,7 +26,7 @@ export function PlayerChip({ className, showMax = true }: PlayerChipProps) {
         {count}
         {showMax && '/4'}
       </span>
-      <span className="text-muted-foreground text-xs ml-1">
+      <span className="text-white/70 text-xs ml-1">
         Connected
       </span>
     </Badge>
