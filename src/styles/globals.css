@@ -4,48 +4,56 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 9%;
-    --primary: 0 0% 13%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 13%;
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
-    --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 13%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 0 0% 56%;
-    --radius: 0.625rem;
+    --radius: 0.65rem;
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: oklch(0.205 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --accent: oklch(0.97 0 0);
+    --accent-foreground: oklch(0.205 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.708 0 0);
+    --chart-1: oklch(0.646 0.222 41.116);
+    --chart-2: oklch(0.6 0.118 184.704);
+    --chart-3: oklch(0.398 0.07 227.392);
+    --chart-4: oklch(0.828 0.189 84.429);
+    --chart-5: oklch(0.769 0.188 70.08);
   }
 
   .dark {
-    --background: 220 20% 6%;
-    --foreground: 0 0% 98%;
-    --card: 220 15% 10%;
-    --card-foreground: 0 0% 98%;
-    --popover: 220 15% 10%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 45 100% 55%;
-    --primary-foreground: 220 20% 6%;
-    --secondary: 220 15% 15%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 220 15% 15%;
-    --muted-foreground: 220 10% 55%;
-    --accent: 220 15% 18%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62% 55%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 220 15% 18%;
-    --input: 220 15% 18%;
-    --ring: 45 100% 55%;
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+    --chart-1: oklch(0.488 0.243 264.376);
+    --chart-2: oklch(0.696 0.17 162.48);
+    --chart-3: oklch(0.769 0.188 70.08);
+    --chart-4: oklch(0.627 0.265 303.9);
+    --chart-5: oklch(0.645 0.246 16.439);
   }
 }
 
@@ -54,7 +62,7 @@
     @apply border-border;
   }
   html {
-    @apply bg-background;
+    background-color: oklch(0.145 0 0);
     overscroll-behavior: none;
   }
   body {
@@ -71,49 +79,46 @@
   }
 }
 
-/* Custom styles for the escape room */
-.encrypted-text {
-  @apply font-mono tracking-wider;
-  color: hsl(45, 100%, 55%);
-  text-shadow: 0 0 10px hsl(45 100% 55% / 0.3);
+/* Modern sleek card styling */
+.sleek-card {
+  @apply rounded-xl border border-border bg-card;
+  box-shadow: 0 1px 3px oklch(0 0 0 / 0.1), 0 1px 2px oklch(0 0 0 / 0.06);
 }
 
+.dark .sleek-card {
+  box-shadow: 0 0 0 1px oklch(1 0 0 / 0.05), 0 4px 24px oklch(0 0 0 / 0.3);
+}
+
+/* Clean card with subtle glass effect */
 .bank-card {
-  @apply border border-border/50 backdrop-blur-sm;
-  background: linear-gradient(
-    135deg,
-    hsl(220 15% 10%) 0%,
-    hsl(220 15% 8%) 100%
-  );
-  box-shadow:
-    0 0 0 1px hsl(220 15% 20% / 0.5),
-    0 4px 20px -4px hsl(0 0% 0% / 0.5),
-    inset 0 1px 0 hsl(0 0% 100% / 0.02);
+  @apply rounded-xl border border-border/50 bg-card;
+  box-shadow: 0 0 0 1px oklch(1 0 0 / 0.05);
 }
 
 .glass-card {
-  @apply backdrop-blur-xl border border-white/5;
-  background: hsl(220 15% 10% / 0.8);
+  @apply backdrop-blur-xl border border-white/5 rounded-xl;
+  background: oklch(0.205 0 0 / 0.8);
+}
+
+/* Accent highlight for important data */
+.encrypted-text {
+  @apply font-mono tracking-wider;
+  color: oklch(0.769 0.188 70.08);
 }
 
 .security-badge {
-  color: hsl(142, 76%, 45%);
-  border-color: hsl(142, 76%, 45% / 0.5);
-  text-shadow: 0 0 10px hsl(142 76% 45% / 0.3);
+  color: oklch(0.696 0.17 162.48);
+  border-color: oklch(0.696 0.17 162.48 / 0.5);
 }
 
-.glow-effect {
-  box-shadow: 0 0 30px hsl(45 100% 55% / 0.1);
-}
-
-/* Terminal-like input for puzzle answers */
+/* Modern input styling */
 .puzzle-input {
-  @apply font-mono bg-black/50 border border-border/50 text-green-400 transition-all duration-200;
+  @apply font-mono bg-background border border-input rounded-lg transition-all duration-200;
+  color: oklch(0.696 0.17 162.48);
 }
 
 .puzzle-input:focus {
-  @apply ring-2 ring-primary/50;
-  box-shadow: 0 0 20px hsl(45 100% 55% / 0.15);
+  @apply ring-2 ring-ring/50 border-ring;
 }
 
 .puzzle-input::placeholder {
@@ -123,25 +128,30 @@
 /* Subtle grid background */
 .grid-bg {
   background-image:
-    linear-gradient(to right, hsl(220 15% 20% / 0.3) 1px, transparent 1px),
-    linear-gradient(to bottom, hsl(220 15% 20% / 0.3) 1px, transparent 1px);
-  background-size: 40px 40px;
+    linear-gradient(to right, oklch(1 0 0 / 3%) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(1 0 0 / 3%) 1px, transparent 1px);
+  background-size: 48px 48px;
 }
 
-/* Animated gradient border */
-@keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+/* Status indicators */
+.status-success {
+  color: oklch(0.696 0.17 162.48);
 }
 
-.gradient-border {
-  position: relative;
-  background: linear-gradient(90deg, hsl(45 100% 55%), hsl(35 100% 50%), hsl(45 100% 55%));
-  background-size: 200% 200%;
-  animation: gradient-shift 3s ease infinite;
+.status-warning {
+  color: oklch(0.769 0.188 70.08);
 }
 
-/* Loading shimmer effect */
+.status-error {
+  color: oklch(0.704 0.191 22.216);
+}
+
+/* Subtle glow effects */
+.glow-effect {
+  box-shadow: 0 0 40px oklch(0.488 0.243 264.376 / 0.1);
+}
+
+/* Loading shimmer */
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
@@ -150,15 +160,15 @@
 .shimmer {
   background: linear-gradient(
     90deg,
-    hsl(220 15% 15%) 0%,
-    hsl(220 15% 20%) 50%,
-    hsl(220 15% 15%) 100%
+    oklch(0.269 0 0) 0%,
+    oklch(0.32 0 0) 50%,
+    oklch(0.269 0 0) 100%
   );
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
 
-/* Blinking cursor effect */
+/* Blinking cursor */
 @keyframes blink {
   0%, 50% { opacity: 1; }
   51%, 100% { opacity: 0; }
@@ -169,43 +179,14 @@
   animation: blink 1s step-end infinite;
 }
 
-/* Pulse glow animation */
+/* Pulse animation */
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 5px hsl(45 100% 55% / 0.3); }
-  50% { box-shadow: 0 0 20px hsl(45 100% 55% / 0.5); }
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
 }
 
 .pulse-glow {
   animation: pulse-glow 2s ease-in-out infinite;
-}
-
-/* Decode reveal animation */
-@keyframes decode-reveal {
-  0% {
-    opacity: 0;
-    transform: translateY(-2px);
-    filter: blur(4px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
-  }
-}
-
-.decode-reveal {
-  animation: decode-reveal 0.3s ease-out forwards;
-}
-
-/* Success flash */
-@keyframes success-flash {
-  0% { background-color: hsl(142 76% 45% / 0); }
-  50% { background-color: hsl(142 76% 45% / 0.2); }
-  100% { background-color: hsl(142 76% 45% / 0); }
-}
-
-.success-flash {
-  animation: success-flash 0.5s ease-out;
 }
 
 /* Typing indicator dots */
@@ -221,69 +202,93 @@
 .typing-dot:nth-child(2) { animation-delay: 0.15s; }
 .typing-dot:nth-child(3) { animation-delay: 0.3s; }
 
-/* Interactive button styles */
+/* Interactive button */
 .btn-interactive {
   @apply relative overflow-hidden transition-all duration-200;
 }
 
-.btn-interactive::before {
-  content: '';
-  @apply absolute inset-0 bg-white/10 opacity-0 transition-opacity duration-200;
-}
-
-.btn-interactive:hover::before {
-  @apply opacity-100;
+.btn-interactive:hover {
+  @apply brightness-110;
 }
 
 .btn-interactive:active {
   @apply scale-[0.98];
 }
 
-/* Scanline effect for terminal look */
-.scanlines {
-  position: relative;
-}
-
-.scanlines::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    hsl(0 0% 0% / 0.03) 2px,
-    hsl(0 0% 0% / 0.03) 4px
-  );
-  pointer-events: none;
-}
-
-/* Data highlight effect */
-.data-highlight {
-  @apply relative;
-  background: linear-gradient(
-    90deg,
-    hsl(45 100% 55% / 0.1) 0%,
-    hsl(45 100% 55% / 0.05) 100%
-  );
-  border-left: 2px solid hsl(45 100% 55%);
-}
-
-/* Smooth scrollbar */
+/* Modern scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(220 15% 10%);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(220 15% 25%);
+  background: oklch(0.4 0 0);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(220 15% 35%);
+  background: oklch(0.5 0 0);
+}
+
+/* Data section styling */
+.data-section {
+  @apply rounded-lg border border-border/50 bg-muted/30 p-4;
+}
+
+.data-row {
+  @apply flex justify-between items-center py-2 border-b border-border/30 last:border-0;
+}
+
+.data-label {
+  @apply text-xs text-muted-foreground;
+}
+
+.data-value {
+  @apply text-sm font-mono;
+}
+
+/* Alert variants */
+.alert-info {
+  @apply border-l-4;
+  border-left-color: var(--chart-1);
+  background-color: oklch(0.488 0.243 264.376 / 0.05);
+}
+
+.alert-warning {
+  @apply border-l-4;
+  border-left-color: var(--chart-3);
+  background-color: oklch(0.769 0.188 70.08 / 0.05);
+}
+
+.alert-success {
+  @apply border-l-4;
+  border-left-color: var(--chart-2);
+  background-color: oklch(0.696 0.17 162.48 / 0.05);
+}
+
+/* Room code display */
+.room-code {
+  @apply font-mono tracking-[0.25em] text-sm px-3 py-1.5 rounded-md bg-muted border border-border;
+}
+
+/* Progress step indicator */
+.progress-step {
+  @apply w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all;
+}
+
+.progress-step-completed {
+  @apply text-background;
+  background-color: oklch(0.696 0.17 162.48);
+}
+
+.progress-step-current {
+  @apply bg-primary text-primary-foreground ring-4 ring-primary/20;
+}
+
+.progress-step-pending {
+  @apply bg-muted text-muted-foreground;
 }

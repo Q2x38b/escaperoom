@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
-import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
 import { useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
@@ -10,7 +10,7 @@ import { useRoom } from '../../hooks/useRoom';
 import { useGameStore } from '../../stores/gameStore';
 import { TypingIndicator } from '../game/TypingIndicator';
 import {
-  Receipt, AlertCircle, Lightbulb, FileText, Send, Loader2, ArrowRight, Lock
+  Receipt, AlertCircle, Lightbulb, Send, Loader2, Lock, Info
 } from 'lucide-react';
 
 // Base64 encoded: "DONATION-50000-AIRCRAFT" = "RE9OQVRJT04tNTAwMDAtQUlSQ1JBRlQ="
@@ -26,7 +26,7 @@ const TRANSACTIONS = [
   {
     id: 'TXN-78292',
     date: '2024-03-14',
-    encoded: 'U1VTUElDSU9VUy1DTElFTlRT',  // SUSPICIOUS-CLIENTS
+    encoded: 'U1VTUElDSU9VUy1DTElFTlRT',
     amount: '$125,000.00',
     type: 'Inbound',
     flagged: false,
@@ -34,7 +34,7 @@ const TRANSACTIONS = [
   {
     id: 'TXN-78293',
     date: '2024-03-12',
-    encoded: 'T0ZGU0hPUkUtVFJBTlNGRVI=',  // OFFSHORE-TRANSFER
+    encoded: 'T0ZGU0hPUkUtVFJBTlNGRVI=',
     amount: '$890,000.00',
     type: 'Transfer',
     flagged: true,
@@ -54,13 +54,11 @@ export function Puzzle2Base64() {
   const { submitPuzzleAnswer, syncInput, claimTyping, releaseTyping, typingPlayer, currentPlayerId } = useRoom();
   const sharedInputs = useGameStore((state) => state.sharedInputs);
 
-  // Check if another player is typing on this puzzle
   const otherPlayerTyping = !!(typingPlayer &&
     typingPlayer.odentifier !== currentPlayerId &&
     typingPlayer.puzzleIndex === PUZZLE_INDEX &&
     Date.now() - typingPlayer.timestamp < 3000);
 
-  // Cleanup typing lock on unmount
   useEffect(() => {
     return () => {
       if (typingIntervalRef.current) {
@@ -90,7 +88,6 @@ export function Puzzle2Base64() {
     releaseTyping();
   }, [releaseTyping]);
 
-  // Query hints from Convex
   const hint0 = useQuery(api.game.getHint, { puzzleIndex: PUZZLE_INDEX, hintIndex: 0 });
   const hint1 = useQuery(api.game.getHint, { puzzleIndex: PUZZLE_INDEX, hintIndex: 1 });
   const hint2 = useQuery(api.game.getHint, { puzzleIndex: PUZZLE_INDEX, hintIndex: 2 });
@@ -136,61 +133,78 @@ export function Puzzle2Base64() {
 
   return (
     <Card className="bank-card">
-      <CardHeader>
+      <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="text-lg flex items-center gap-2">
               <Receipt className="w-5 h-5" />
               Transaction Logs
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="mt-1">
               Encoded transaction records from the Vance account
             </CardDescription>
           </div>
-          <Badge variant="warning">ENCODED DATA</Badge>
+          <Badge variant="secondary" className="font-mono text-xs">
+            BASE64 ENCODED
+          </Badge>
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-6">
-        <Alert>
-          <FileText className="w-4 h-4" />
-          <AlertTitle>Transaction Analysis</AlertTitle>
-          <AlertDescription>
-            The transaction descriptions have been encoded using a common encoding scheme.
-            Decode the flagged transaction (TXN-78291) to reveal important details about
-            suspicious fund movements.
-          </AlertDescription>
-        </Alert>
+      <CardContent className="space-y-5">
+        {/* Mission brief */}
+        <div className="flex gap-3 p-4 rounded-lg bg-muted/50 border border-border">
+          <Info className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+          <div className="text-sm text-muted-foreground">
+            <span className="text-foreground font-medium">Transaction Analysis: </span>
+            The transaction descriptions have been encoded. Decode the flagged transaction
+            (TXN-78291) to reveal important details about suspicious fund movements.
+          </div>
+        </div>
 
-        <div className="bg-black/30 rounded-lg overflow-hidden">
-          <div className="grid grid-cols-5 gap-4 p-4 border-b border-border/50 text-xs font-medium text-muted-foreground">
-            <div>TXN ID</div>
-            <div>DATE</div>
-            <div>DESCRIPTION (ENCODED)</div>
-            <div>AMOUNT</div>
-            <div>TYPE</div>
+        {/* Transaction table */}
+        <div className="rounded-xl border border-border overflow-hidden">
+          {/* Header */}
+          <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-muted/30 border-b border-border text-xs font-medium text-muted-foreground">
+            <div className="col-span-2">TXN ID</div>
+            <div className="col-span-2">DATE</div>
+            <div className="col-span-4">DESCRIPTION (ENCODED)</div>
+            <div className="col-span-2">AMOUNT</div>
+            <div className="col-span-2">TYPE</div>
           </div>
 
+          {/* Rows */}
           {TRANSACTIONS.map((txn) => (
             <div
               key={txn.id}
-              className={`grid grid-cols-5 gap-4 p-4 border-b border-border/30 last:border-0 transition-colors ${
-                txn.flagged ? 'bg-amber-500/5 border-l-2 border-l-amber-500' : 'hover:bg-white/5'
+              className={`grid grid-cols-12 gap-2 px-4 py-3 border-b border-border last:border-0 items-center ${
+                txn.flagged ? 'bg-amber-500/5' : ''
               }`}
             >
-              <div className="font-mono text-sm flex items-center gap-2">
-                {txn.id}
+              <div className="col-span-2 flex items-center gap-2">
+                <span className="font-mono text-sm">{txn.id}</span>
                 {txn.flagged && (
-                  <Badge variant="warning" className="text-[10px] px-1">FLAG</Badge>
+                  <Badge variant="outline" className="text-amber-500 border-amber-500/30 text-[10px] px-1.5">
+                    FLAG
+                  </Badge>
                 )}
               </div>
-              <div className="font-mono text-sm text-muted-foreground">{txn.date}</div>
-              <div className="encrypted-text font-mono text-xs break-all">{txn.encoded}</div>
-              <div className="font-mono text-sm text-green-400">{txn.amount}</div>
-              <div>
+              <div className="col-span-2 font-mono text-sm text-muted-foreground">{txn.date}</div>
+              <div className="col-span-4">
+                <code className={`text-xs break-all ${txn.flagged ? 'encrypted-text' : 'text-muted-foreground'}`}>
+                  {txn.encoded}
+                </code>
+              </div>
+              <div className="col-span-2 font-mono text-sm text-green-500">{txn.amount}</div>
+              <div className="col-span-2">
                 <Badge
-                  variant={txn.type === 'Inbound' ? 'success' : txn.type === 'Transfer' ? 'secondary' : 'outline'}
-                  className="text-xs"
+                  variant="outline"
+                  className={`text-xs ${
+                    txn.type === 'Inbound'
+                      ? 'text-green-500 border-green-500/30'
+                      : txn.type === 'Transfer'
+                        ? 'text-blue-500 border-blue-500/30'
+                        : 'text-muted-foreground'
+                  }`}
                 >
                   {txn.type}
                 </Badge>
@@ -199,93 +213,87 @@ export function Puzzle2Base64() {
           ))}
         </div>
 
-        <div className="bg-muted/30 rounded-lg p-4 flex items-start gap-3">
-          <ArrowRight className="w-5 h-5 text-muted-foreground mt-0.5" />
-          <div className="text-sm">
-            <div className="font-medium mb-1">Encoding Pattern</div>
-            <p className="text-muted-foreground">
-              The description fields use a standard encoding commonly seen in email attachments
-              and URL parameters. The encoded text consists of letters (A-Z, a-z), numbers (0-9),
-              plus signs (+), slashes (/), and ends with equals signs (=) for padding.
-            </p>
+        {/* Encoding hint */}
+        <div className="flex gap-3 p-3 rounded-lg bg-muted/30 border border-border text-sm">
+          <AlertCircle className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+          <div className="text-muted-foreground">
+            <span className="text-foreground font-medium">Base64 encoding: </span>
+            Uses A-Z, a-z, 0-9, +, / and = for padding. Common in emails and URLs.
           </div>
         </div>
 
+        {/* Hints */}
         {hints.length > 0 && (
           <div className="space-y-2">
             {hints.map((hint, i) => (
-              <Alert key={i} variant="warning">
-                <Lightbulb className="w-4 h-4" />
-                <AlertDescription>{hint}</AlertDescription>
+              <Alert key={i} className="border-amber-500/30 bg-amber-500/5">
+                <Lightbulb className="w-4 h-4 text-amber-500" />
+                <AlertDescription className="text-sm">{hint}</AlertDescription>
               </Alert>
             ))}
           </div>
         )}
 
-        <div className="space-y-4">
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-muted-foreground">
-                  Decoded Transaction Description (TXN-78291)
-                </label>
-                {otherPlayerTyping && typingPlayer && (
-                  <TypingIndicator nickname={typingPlayer.nickname} />
-                )}
-              </div>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Input
-                    type="text"
-                    value={answer}
-                    onChange={(e) => handleInputChange(e.target.value)}
-                    placeholder={otherPlayerTyping ? `${typingPlayer?.nickname} is typing...` : "Enter decoded description"}
-                    className={`font-mono uppercase bg-black/30 ${otherPlayerTyping ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    disabled={otherPlayerTyping}
-                    onFocus={handleFocus}
-                    onBlur={handleBlur}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !isSubmitting && !otherPlayerTyping) {
-                        e.preventDefault();
-                        handleSubmit();
-                      }
-                    }}
-                  />
-                  {otherPlayerTyping && (
-                    <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-400" />
-                  )}
-                </div>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!answer.trim() || isSubmitting || otherPlayerTyping}
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Send className="w-4 h-4" />
-                  )}
-                </Button>
-              </div>
+        {/* Answer input */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium">Decoded Transaction Description (TXN-78291)</label>
+            {otherPlayerTyping && typingPlayer && (
+              <TypingIndicator nickname={typingPlayer.nickname} />
+            )}
+          </div>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Input
+                type="text"
+                value={answer}
+                onChange={(e) => handleInputChange(e.target.value)}
+                placeholder={otherPlayerTyping ? `${typingPlayer?.nickname} is typing...` : "Enter decoded description"}
+                className={`font-mono uppercase h-10 ${otherPlayerTyping ? 'opacity-50 cursor-not-allowed' : ''}`}
+                disabled={otherPlayerTyping}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !isSubmitting && !otherPlayerTyping) {
+                    e.preventDefault();
+                    handleSubmit();
+                  }
+                }}
+              />
+              {otherPlayerTyping && (
+                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500" />
+              )}
             </div>
+            <Button
+              onClick={handleSubmit}
+              disabled={!answer.trim() || isSubmitting || otherPlayerTyping}
+              className="h-10 px-4"
+            >
+              {isSubmitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+            </Button>
           </div>
 
           {error && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="py-2">
               <AlertCircle className="w-4 h-4" />
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription className="text-sm">{error}</AlertDescription>
             </Alert>
           )}
 
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center pt-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={handleHint}
               disabled={hintIndex >= 3}
-              className="text-muted-foreground"
+              className="text-muted-foreground h-8"
             >
               <Lightbulb className="w-4 h-4 mr-2" />
-              Request Hint ({3 - hintIndex} remaining)
+              Hint ({3 - hintIndex})
             </Button>
           </div>
         </div>
