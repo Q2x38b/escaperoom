@@ -1,40 +1,46 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Separator } from '../ui/separator';
 import { usePeer } from '../../hooks/usePeer';
-import { Users, Plus, ArrowRight, AlertCircle, Wifi } from 'lucide-react';
+import { Users, Plus, ArrowRight, AlertCircle, Wifi, Loader2 } from 'lucide-react';
 
 export function RoomLobby() {
   const [nickname, setNickname] = useState('');
   const [roomCode, setRoomCode] = useState('');
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [validationError, setValidationError] = useState('');
 
-  const { isConnected, createRoom, joinRoom } = usePeer();
+  const { isConnected, isConnecting, connectionError, createRoom, joinRoom, clearError } = usePeer();
+
+  // Clear validation error when connection error appears
+  useEffect(() => {
+    if (connectionError) {
+      setValidationError('');
+    }
+  }, [connectionError]);
 
   const handleCreateRoom = () => {
     if (!nickname.trim()) {
-      setError('Please enter a nickname');
+      setValidationError('Please enter a nickname');
       return;
     }
-    setError('');
-    setIsLoading(true);
+    setValidationError('');
+    clearError();
     createRoom(nickname.trim());
   };
 
   const handleJoinRoom = () => {
     if (!nickname.trim()) {
-      setError('Please enter a nickname');
+      setValidationError('Please enter a nickname');
       return;
     }
     if (!roomCode.trim()) {
-      setError('Please enter a room code');
+      setValidationError('Please enter a room code');
       return;
     }
-    setError('');
-    setIsLoading(true);
+    setValidationError('');
+    clearError();
     joinRoom(roomCode.trim().toUpperCase(), nickname.trim());
   };
 
@@ -43,10 +49,19 @@ export function RoomLobby() {
       <div className="w-full max-w-md">
         {/* Connection status */}
         <div className="flex items-center justify-center gap-2 mb-6">
-          <Wifi className={`w-4 h-4 ${isConnected ? 'text-green-400' : 'text-muted-foreground'}`} />
-          <span className={`text-sm font-mono ${isConnected ? 'text-green-400' : 'text-muted-foreground'}`}>
-            {isConnected ? 'Ready' : 'Initializing...'}
-          </span>
+          {isConnecting ? (
+            <>
+              <Loader2 className="w-4 h-4 text-amber-400 animate-spin" />
+              <span className="text-sm font-mono text-amber-400">Connecting...</span>
+            </>
+          ) : (
+            <>
+              <Wifi className={`w-4 h-4 ${isConnected ? 'text-green-400' : 'text-muted-foreground'}`} />
+              <span className={`text-sm font-mono ${isConnected ? 'text-green-400' : 'text-muted-foreground'}`}>
+                {isConnected ? 'Ready' : 'Ready to connect'}
+              </span>
+            </>
+          )}
         </div>
 
         <Card className="bank-card">
@@ -69,14 +84,15 @@ export function RoomLobby() {
                 onChange={(e) => setNickname(e.target.value)}
                 placeholder="Enter your codename"
                 maxLength={20}
+                disabled={isConnecting}
                 className="bg-black/30"
               />
             </div>
 
-            {error && (
-              <div className="flex items-center gap-2 text-destructive text-sm">
-                <AlertCircle className="w-4 h-4" />
-                <span>{error}</span>
+            {(validationError || connectionError) && (
+              <div className="flex items-start gap-2 text-destructive text-sm bg-destructive/10 p-3 rounded-lg">
+                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>{validationError || connectionError}</span>
               </div>
             )}
 
@@ -84,11 +100,15 @@ export function RoomLobby() {
             <div className="space-y-3">
               <Button
                 onClick={handleCreateRoom}
-                disabled={isLoading || !nickname.trim()}
+                disabled={isConnecting || !nickname.trim()}
                 className="w-full"
               >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Investigation Room
+                {isConnecting ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Plus className="w-4 h-4 mr-2" />
+                )}
+                {isConnecting ? 'Creating...' : 'Create Investigation Room'}
               </Button>
             </div>
 
@@ -109,17 +129,22 @@ export function RoomLobby() {
                   type="text"
                   value={roomCode}
                   onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                  onKeyDown={(e) => e.key === 'Enter' && nickname.trim() && roomCode.trim() && handleJoinRoom()}
+                  onKeyDown={(e) => e.key === 'Enter' && !isConnecting && nickname.trim() && roomCode.trim() && handleJoinRoom()}
                   placeholder="XXXXXXXX"
                   maxLength={8}
+                  disabled={isConnecting}
                   className="font-mono tracking-widest bg-black/30 text-center"
                 />
                 <Button
                   onClick={handleJoinRoom}
-                  disabled={isLoading || !nickname.trim() || !roomCode.trim()}
+                  disabled={isConnecting || !nickname.trim() || !roomCode.trim()}
                   variant="secondary"
                 >
-                  <ArrowRight className="w-4 h-4" />
+                  {isConnecting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <ArrowRight className="w-4 h-4" />
+                  )}
                 </Button>
               </div>
               {!nickname.trim() && roomCode.trim() && (

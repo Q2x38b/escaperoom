@@ -14,9 +14,12 @@ interface PeerMessage {
 
 interface UsePeerReturn {
   isConnected: boolean;
+  isConnecting: boolean;
+  connectionError: string | null;
   roomCode: string | null;
   createRoom: (nickname: string) => void;
   joinRoom: (roomCode: string, nickname: string) => void;
+  clearError: () => void;
   startGame: () => void;
   submitPuzzleAttempt: (puzzleIndex: number, answer: string) => Promise<{ correct: boolean; finalPasscode?: string }>;
   requestHint: (puzzleIndex: number, hintIndex: number) => Promise<string | null>;
@@ -29,8 +32,15 @@ export function usePeer(): UsePeerReturn {
   const peerRef = useRef<Peer | null>(null);
   const connectionsRef = useRef<Map<string, DataConnection>>(new Map());
   const [isConnected, setIsConnected] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const hostConnectionRef = useRef<DataConnection | null>(null);
+  const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearError = useCallback(() => {
+    setConnectionError(null);
+  }, []);
 
   const {
     setRoom,
@@ -164,6 +174,15 @@ export function usePeer(): UsePeerReturn {
 
   // Create a room (become host)
   const createRoom = useCallback((nickname: string) => {
+    // Clean up any existing connection
+    if (peerRef.current) {
+      peerRef.current.destroy();
+      peerRef.current = null;
+    }
+
+    setIsConnecting(true);
+    setConnectionError(null);
+
     const peerId = uuidv4().slice(0, 8).toUpperCase();
     const peer = new Peer(peerId);
 
@@ -171,6 +190,7 @@ export function usePeer(): UsePeerReturn {
       console.log('Peer opened with ID:', id);
       peerRef.current = peer;
       setRoomCode(id);
+      setIsConnecting(false);
       setIsConnected(true);
 
       const player: Player = {
@@ -209,23 +229,54 @@ export function usePeer(): UsePeerReturn {
 
     peer.on('error', (err) => {
       console.error('Peer error:', err);
+      setIsConnecting(false);
       setIsConnected(false);
+
+      const errorType = (err as { type?: string }).type;
+      if (errorType === 'unavailable-id') {
+        setConnectionError('Failed to create room. Please try again.');
+      } else if (errorType === 'network') {
+        setConnectionError('Network error. Please check your internet connection.');
+      } else {
+        setConnectionError('Failed to create room. Please try again.');
+      }
     });
   }, [setRoom, updatePlayers, setupConnection, broadcast]);
 
   // Join an existing room
   const joinRoom = useCallback((code: string, nickname: string) => {
+    // Clean up any existing connection
+    if (peerRef.current) {
+      peerRef.current.destroy();
+      peerRef.current = null;
+    }
+    if (connectionTimeoutRef.current) {
+      clearTimeout(connectionTimeoutRef.current);
+    }
+
+    setIsConnecting(true);
+    setConnectionError(null);
+
     const peerId = uuidv4().slice(0, 8).toUpperCase();
     const peer = new Peer(peerId);
+
+    // Set connection timeout (10 seconds)
+    connectionTimeoutRef.current = setTimeout(() => {
+      if (!isConnected) {
+        setIsConnecting(false);
+        setConnectionError('Connection timed out. The room may not exist or the host may be offline.');
+        peer.destroy();
+      }
+    }, 10000);
 
     peer.on('open', (id) => {
       console.log('Peer opened with ID:', id);
       peerRef.current = peer;
-      setIsConnected(true);
 
       // Connect to host
       const conn = peer.connect(code.toUpperCase(), {
         metadata: { nickname },
+        reliable: true,
       });
 
       hostConnectionRef.current = conn;
@@ -233,17 +284,48 @@ export function usePeer(): UsePeerReturn {
 
       conn.on('open', () => {
         console.log('Connected to host');
+        if (connectionTimeoutRef.current) {
+          clearTimeout(connectionTimeoutRef.current);
+        }
+        setIsConnecting(false);
+        setIsConnected(true);
         setRoomCode(code.toUpperCase());
         setRoom(code.toUpperCase(), id, false);
         // Player list will be updated when we receive sync-state from host
+      });
+
+      conn.on('error', (err) => {
+        console.error('Connection error:', err);
+        if (connectionTimeoutRef.current) {
+          clearTimeout(connectionTimeoutRef.current);
+        }
+        setIsConnecting(false);
+        setIsConnected(false);
+        setConnectionError('Failed to connect to the room. Please check the room code and try again.');
       });
     });
 
     peer.on('error', (err) => {
       console.error('Peer error:', err);
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+      }
+      setIsConnecting(false);
       setIsConnected(false);
+
+      // Provide user-friendly error messages
+      const errorType = (err as { type?: string }).type;
+      if (errorType === 'peer-unavailable') {
+        setConnectionError('Room not found. The room code may be incorrect or the host may have left.');
+      } else if (errorType === 'network') {
+        setConnectionError('Network error. Please check your internet connection.');
+      } else if (errorType === 'disconnected') {
+        setConnectionError('Disconnected from signaling server. Please refresh and try again.');
+      } else {
+        setConnectionError('Could not connect to room. Please check the room code and try again.');
+      }
     });
-  }, [setRoom, setupConnection]);
+  }, [setRoom, setupConnection, isConnected]);
 
   // Start the game (host only)
   const startGame = useCallback(() => {
@@ -340,6 +422,9 @@ export function usePeer(): UsePeerReturn {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+      }
       connectionsRef.current.forEach((conn) => conn.close());
       peerRef.current?.destroy();
     };
@@ -347,9 +432,12 @@ export function usePeer(): UsePeerReturn {
 
   return {
     isConnected,
+    isConnecting,
+    connectionError,
     roomCode,
     createRoom,
     joinRoom,
+    clearError,
     startGame,
     submitPuzzleAttempt,
     requestHint,
