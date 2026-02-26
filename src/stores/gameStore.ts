@@ -101,7 +101,8 @@ export const useGameStore = create<GameStore>()(
         solvedPuzzles: state.solvedPuzzles.includes(puzzleIndex)
           ? state.solvedPuzzles
           : [...state.solvedPuzzles, puzzleIndex],
-        currentPuzzle: puzzleIndex + 1,
+        // Only advance currentPuzzle forward, never backward
+        currentPuzzle: Math.max(state.currentPuzzle, puzzleIndex + 1),
       })),
 
       setCurrentPuzzle: (puzzleIndex) => set({ currentPuzzle: puzzleIndex }),
