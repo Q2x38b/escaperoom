@@ -325,13 +325,27 @@ export function useRoom(): UseRoomReturn {
           answer,
         });
 
+        // Immediately update local state on correct answer for instant feedback
+        // Other players will sync via the reactive query
+        if (result.correct) {
+          solvePuzzle(puzzleIndex);
+
+          // Clear shared inputs for this puzzle so next attempt starts fresh
+          updateSharedInput(`puzzle${puzzleIndex}_answer`, '');
+
+          // If victory, set the victory state immediately
+          if (result.finalPasscode && result.completionTime) {
+            setVictory(result.finalPasscode, result.completionTime);
+          }
+        }
+
         return result;
       } catch (error) {
         console.error("Failed to submit answer:", error);
         return { correct: false };
       }
     },
-    [roomId, submitAnswerMutation]
+    [roomId, submitAnswerMutation, solvePuzzle, updateSharedInput, setVictory]
   );
 
   const syncInput = useCallback(

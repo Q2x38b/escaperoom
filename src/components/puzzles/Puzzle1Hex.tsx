@@ -8,7 +8,7 @@ import { useRoom } from '../../hooks/useRoom';
 import { useGameStore } from '../../stores/gameStore';
 import { TypingIndicator } from '../game/TypingIndicator';
 import {
-  ArrowRight, AlertCircle, Send, Loader2, Building, Lock, Info, CheckCircle
+  ArrowRight, AlertCircle, Send, Loader2, Building, Lock, Info
 } from 'lucide-react';
 
 // CAYMAN in hex: 43 41 59 4D 41 4E
@@ -38,7 +38,6 @@ export function Puzzle1Hex() {
   const [answer, setAnswer] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isLocallyTypingRef = useRef(false);
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -127,13 +126,12 @@ export function Puzzle1Hex() {
     const result = await submitPuzzleAnswer(PUZZLE_INDEX, answer);
 
     if (result.correct) {
-      setShowSuccess(true);
-      // The room state will automatically update and switch to next puzzle
+      // The useRoom hook immediately updates the store, which will switch to the next puzzle
+      // No need to show success message here since the component will unmount
     } else {
       setError('Incorrect. The decoded location does not match our records.');
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
   };
 
   return (
@@ -177,7 +175,7 @@ export function Puzzle1Hex() {
           </div>
 
           {/* Origin & Destination */}
-          <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/20">
+          <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/40">
             {/* Origin */}
             <div className="p-4">
               <div className="flex items-center gap-2 text-xs font-medium text-white/90 mb-3">
@@ -254,25 +252,6 @@ export function Puzzle1Hex() {
           </div>
         </div>
 
-        {/* Encoding hint */}
-        <div className="flex gap-3 p-3 rounded-lg bg-white/5 border border-white/20 text-sm">
-          <AlertCircle className="w-4 h-4 text-white/90 shrink-0 mt-0.5" />
-          <div className="text-white/90">
-            <span className="text-white font-medium">Hex encoding: </span>
-            Each pair = hex number (0-9, A-F) → decimal → ASCII. Example: 41 = 65 = 'A'
-          </div>
-        </div>
-
-        {/* Success message */}
-        {showSuccess && (
-          <Alert className="border-green-500/30 bg-green-500/10">
-            <CheckCircle className="w-4 h-4 text-green-500" />
-            <AlertDescription className="text-sm text-green-400">
-              Correct! Moving to the next puzzle...
-            </AlertDescription>
-          </Alert>
-        )}
-
         {/* Answer input */}
         <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-3">
           <div className="flex items-center justify-between">
@@ -292,7 +271,7 @@ export function Puzzle1Hex() {
                 onChange={(e) => handleInputChange(e.target.value)}
                 placeholder={otherPlayerTyping ? `${typingPlayer?.nickname} is typing...` : "ENTER DECODED LOCATION"}
                 className={`font-mono uppercase h-10 bg-white/10 border-white/40 text-white placeholder:text-white/60 ${otherPlayerTyping ? 'opacity-50 cursor-not-allowed' : ''}`}
-                disabled={otherPlayerTyping || showSuccess}
+                disabled={otherPlayerTyping || isSubmitting}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
                 aria-describedby={error ? "puzzle1-error" : undefined}
@@ -303,7 +282,7 @@ export function Puzzle1Hex() {
             </div>
             <Button
               type="submit"
-              disabled={!answer.trim() || isSubmitting || otherPlayerTyping || showSuccess}
+              disabled={!answer.trim() || isSubmitting || otherPlayerTyping}
               aria-label="Submit answer"
               className="h-10 px-4"
             >

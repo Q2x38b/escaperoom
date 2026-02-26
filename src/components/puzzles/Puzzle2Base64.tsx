@@ -8,7 +8,7 @@ import { useRoom } from '../../hooks/useRoom';
 import { useGameStore } from '../../stores/gameStore';
 import { TypingIndicator } from '../game/TypingIndicator';
 import {
-  Receipt, AlertCircle, Send, Loader2, Lock, Info, CheckCircle
+  Receipt, AlertCircle, Send, Loader2, Lock, Info
 } from 'lucide-react';
 
 // Base64 encoded: "DONATION-50000-AIRCRAFT" = "RE9OQVRJT04tNTAwMDAtQUlSQ1JBRlQ="
@@ -45,7 +45,6 @@ export function Puzzle2Base64() {
   const [answer, setAnswer] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isLocallyTypingRef = useRef(false);
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -128,13 +127,11 @@ export function Puzzle2Base64() {
     const result = await submitPuzzleAnswer(PUZZLE_INDEX, answer);
 
     if (result.correct) {
-      setShowSuccess(true);
-      // The room state will automatically update and switch to next puzzle
+      // The useRoom hook immediately updates the store, which will switch to the next puzzle
     } else {
       setError('Incorrect. The decoded transaction does not match our records.');
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
   };
 
   return (
@@ -273,16 +270,6 @@ export function Puzzle2Base64() {
           </div>
         </div>
 
-        {/* Success message */}
-        {showSuccess && (
-          <Alert className="border-green-500/30 bg-green-500/10">
-            <CheckCircle className="w-4 h-4 text-green-500" />
-            <AlertDescription className="text-sm text-green-400">
-              Correct! Moving to the next puzzle...
-            </AlertDescription>
-          </Alert>
-        )}
-
         {/* Answer input */}
         <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-3">
           <div className="flex items-center justify-between">
@@ -302,7 +289,7 @@ export function Puzzle2Base64() {
                 onChange={(e) => handleInputChange(e.target.value)}
                 placeholder={otherPlayerTyping ? `${typingPlayer?.nickname} is typing...` : "ENTER DECODED DESCRIPTION"}
                 className={`font-mono uppercase h-10 bg-white/10 border-white/40 text-white placeholder:text-white/60 ${otherPlayerTyping ? 'opacity-50 cursor-not-allowed' : ''}`}
-                disabled={otherPlayerTyping || showSuccess}
+                disabled={otherPlayerTyping || isSubmitting}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
                 aria-describedby={error ? "puzzle2-error" : undefined}
@@ -313,7 +300,7 @@ export function Puzzle2Base64() {
             </div>
             <Button
               type="submit"
-              disabled={!answer.trim() || isSubmitting || otherPlayerTyping || showSuccess}
+              disabled={!answer.trim() || isSubmitting || otherPlayerTyping}
               aria-label="Submit answer"
               className="h-10 px-4"
             >
