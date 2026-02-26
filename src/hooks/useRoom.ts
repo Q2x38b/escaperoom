@@ -46,6 +46,7 @@ export function useRoom(): UseRoomReturn {
 
   const {
     setRoom,
+    setHost,
     updatePlayers,
     startGame: storeStartGame,
     solvePuzzle,
@@ -150,6 +151,11 @@ export function useRoom(): UseRoomReturn {
         return;
       }
 
+      // Update host status from room data (fixes host status after reconnection)
+      if (currentPlayer) {
+        setHost(currentPlayer.isHost);
+      }
+
       // Update shared inputs
       Object.entries(roomData.sharedInputs).forEach(([key, value]) => {
         updateSharedInput(key, value);
@@ -172,7 +178,7 @@ export function useRoom(): UseRoomReturn {
       clearSession();
       setPhase('entry');
     }
-  }, [roomData, roomId, identifier, updatePlayers, updateSharedInput, solvePuzzle, storeStartGame, setVictory, setPhase, clearSession]);
+  }, [roomData, roomId, identifier, updatePlayers, updateSharedInput, solvePuzzle, storeStartGame, setVictory, setPhase, clearSession, setHost]);
 
   const clearError = useCallback(() => {
     setConnectionError(null);

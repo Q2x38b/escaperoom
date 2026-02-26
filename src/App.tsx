@@ -10,8 +10,7 @@ import { Loader2 } from 'lucide-react';
 
 function App() {
   const phase = useGameStore((state) => state.phase);
-  const savedRoomId = useGameStore((state) => state.savedRoomId);
-  const { isRestoring, isConnected } = useRoom();
+  const { isRestoring } = useRoom();
 
   // Add beforeunload warning when in an active game
   useEffect(() => {
@@ -29,8 +28,8 @@ function App() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [phase]);
 
-  // Show loading screen while restoring session
-  if (isRestoring || (savedRoomId && !isConnected && phase !== 'entry')) {
+  // Show loading screen only while actively restoring a previous session
+  if (isRestoring) {
     return (
       <div className="dark min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="text-center space-y-4">

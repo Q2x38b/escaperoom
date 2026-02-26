@@ -38,6 +38,7 @@ interface GameStore {
   setConnected: (connected: boolean) => void;
   setPhase: (phase: GamePhase) => void;
   setRoom: (roomId: string, playerId: string, isHost: boolean) => void;
+  setHost: (isHost: boolean) => void;
   updatePlayers: (players: Player[]) => void;
   startGame: (startTime: number) => void;
   solvePuzzle: (puzzleIndex: number) => void;
@@ -82,6 +83,8 @@ export const useGameStore = create<GameStore>()(
         isHost,
         phase: 'waiting',
       }),
+
+      setHost: (isHost) => set({ isHost }),
 
       updatePlayers: (players) => set({ players }),
 
