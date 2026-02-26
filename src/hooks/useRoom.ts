@@ -194,9 +194,13 @@ export function useRoom(): UseRoomReturn {
       // Update solved puzzles
       roomData.solvedPuzzles.forEach((idx) => solvePuzzle(idx));
 
-      // Sync current puzzle directly from room data to ensure all players see the same puzzle
+      // Sync current puzzle from room data, but only if server is ahead of local state
+      // This prevents stale server data from overwriting optimistic local updates
       if (roomData.currentPuzzle !== undefined) {
-        setCurrentPuzzle(roomData.currentPuzzle);
+        const localPuzzle = useGameStore.getState().currentPuzzle;
+        if (roomData.currentPuzzle >= localPuzzle) {
+          setCurrentPuzzle(roomData.currentPuzzle);
+        }
       }
 
       // Update game phase
