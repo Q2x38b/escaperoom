@@ -453,16 +453,18 @@ export const endGame = mutation({
       throw new Error("Only the host can end the game");
     }
 
-    // Reset room to waiting state
-    await ctx.db.patch(args.roomId, {
+    // Reset room to waiting state by replacing the document
+    // We need to use replace instead of patch because Convex doesn't allow undefined values in patch
+    await ctx.db.replace(args.roomId, {
+      code: room.code,
+      hostId: room.hostId,
       phase: "waiting",
       currentPuzzle: 0,
       solvedPuzzles: [],
-      startTime: undefined,
-      finalPasscode: undefined,
-      completionTime: undefined,
       sharedInputs: {},
-      typingPlayer: undefined,
+      isLocked: room.isLocked,
+      createdAt: room.createdAt,
+      // Optional fields are omitted to clear them: startTime, finalPasscode, completionTime, typingPlayer
     });
 
     return { success: true };
