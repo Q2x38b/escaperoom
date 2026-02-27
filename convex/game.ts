@@ -147,7 +147,7 @@ export const deleteRoom = mutation({
 // LOCATION-BASED SPLIT PUZZLE SYSTEM
 // ============================================
 
-// Puzzle data types for table rendering
+// Puzzle data types for varied rendering
 interface TableData {
   type: 'table';
   header: string;
@@ -157,14 +157,42 @@ interface TableData {
   encodedField: { row: number; col: number; hint: string };
 }
 
-interface RecordData {
-  type: 'record';
-  header: string;
-  fields: { label: string; value: string; highlight?: boolean }[];
-  encodedField: { label: string; value: string; hint: string };
+interface TerminalData {
+  type: 'terminal';
+  prompt: string;
+  lines: { prefix?: string; content: string; encoded?: boolean; style?: 'success' | 'error' | 'warning' | 'info' }[];
+  encodedHint: string;
 }
 
-type PuzzleData = TableData | RecordData;
+interface DocumentData {
+  type: 'document';
+  letterhead: string;
+  date: string;
+  reference: string;
+  body: string[];
+  encodedLine: { index: number; hint: string };
+  signature?: { name: string; title: string };
+}
+
+interface EmailData {
+  type: 'email';
+  from: string;
+  to: string;
+  subject: string;
+  date: string;
+  body: string[];
+  encodedLine: { index: number; hint: string };
+  attachments?: string[];
+}
+
+interface LogData {
+  type: 'log';
+  header: string;
+  entries: { timestamp: string; level: 'info' | 'warn' | 'error' | 'debug'; message: string; encoded?: boolean }[];
+  encodedHint: string;
+}
+
+type PuzzleData = TableData | TerminalData | DocumentData | EmailData | LogData;
 
 // Location definitions - following the money trail theme
 // Each location represents a point in the financial investigation
@@ -206,23 +234,53 @@ const LOCATIONS: Record<string, {
         answer: "VANCE",
       },
       {
-        title: "Wire Transfer Log",
-        objective: "A suspicious wire transfer was flagged by compliance. The destination is encoded in Base64 format. Decode it to trace where the funds were sent.",
+        title: "Vault Access Terminal",
+        objective: "The vault security terminal shows access attempts. One user's name is encoded in Base64. Decode it to find who accessed the vault after hours.",
         data: {
-          type: "table",
-          header: "WIRE TRANSFER HISTORY",
-          columns: ["Transfer ID", "Date", "Sender", "Destination", "Amount", "Status"],
-          rows: [
-            ["WT-2024-7826", "2024-03-13", "Morrison R.", "Geneva HQ", "$50,000.00", { value: "Cleared", badge: "active" }],
-            ["WT-2024-7827", "2024-03-14", "Chen T.", "Singapore Branch", "$125,000.00", { value: "Cleared", badge: "active" }],
-            ["WT-2024-7828", "2024-03-14", "Andersen K.", "Zurich Office", "$200,000.00", { value: "Cleared", badge: "active" }],
-            ["WT-2024-7829", "2024-03-15", "Account 0093", { value: "Q0FZTUFOIA==", hint: "BASE64" }, "$750,000.00", { value: "Flagged", badge: "warning" }],
-            ["WT-2024-7830", "2024-03-15", "Santos M.", "Panama City", "$0.00", { value: "Blocked", badge: "inactive" }],
+          type: "terminal",
+          prompt: "MERIDIAN SECURE VAULT v3.2.1",
+          lines: [
+            { content: "Initializing secure connection...", style: "info" },
+            { content: "Authentication verified", style: "success" },
+            { content: "Loading access history...", style: "info" },
+            { prefix: "[2024-03-14 22:15]", content: "ACCESS GRANTED - Morrison, R. (Level 3)" },
+            { prefix: "[2024-03-14 23:47]", content: "ACCESS DENIED - Invalid biometric" },
+            { prefix: "[2024-03-15 01:23]", content: "ACCESS GRANTED - Q0FSVEVS (Level 5)", encoded: true },
+            { prefix: "[2024-03-15 01:58]", content: "VAULT CONTENTS MODIFIED", style: "warning" },
+            { prefix: "[2024-03-15 02:14]", content: "ACCESS TERMINATED - Session timeout" },
+            { content: "End of log. 4 events found.", style: "info" },
           ],
-          footer: { label: "Total Transfers (This Week)", value: "$1,125,000.00" },
-          encodedField: { row: 3, col: 3, hint: "Destination is Base64-encoded" },
+          encodedHint: "Username is Base64-encoded",
         },
-        answer: "CAYMAN",
+        answer: "CARTER",
+      },
+      {
+        title: "Wire Transfer Authorization",
+        objective: "A confidential memo authorizes a large transfer. The destination country is encoded in binary. Decode it to trace the money.",
+        data: {
+          type: "document",
+          letterhead: "MERIDIAN BANK - INTERNAL MEMORANDUM",
+          date: "March 15, 2024",
+          reference: "WIRE-AUTH-2024-0892",
+          body: [
+            "TO: Wire Transfer Department",
+            "FROM: V. Volkov, Senior VP",
+            "RE: Priority Transfer Authorization",
+            "",
+            "This memo authorizes the immediate transfer of USD $2,500,000",
+            "from Account #7829-4451-0093 to the following destination:",
+            "",
+            "Receiving Bank: First Caribbean International",
+            "Destination: 01010000 01000001 01001110 01000001 01001101 01000001",
+            "Reference: FOUNDATION-GRANT-Q1",
+            "",
+            "This transfer has been pre-approved by the board and should",
+            "bypass standard compliance review procedures.",
+          ],
+          encodedLine: { index: 8, hint: "Destination country is binary-encoded" },
+          signature: { name: "Viktor Volkov", title: "Senior Vice President" },
+        },
+        answer: "PANAMA",
       },
     ],
   },
@@ -252,23 +310,47 @@ const LOCATIONS: Record<string, {
         answer: "PASS",
       },
       {
-        title: "Guest Communications Log",
-        objective: "An unsent email draft contains a hex-encoded meeting location. Decode it to find where the next handoff occurs.",
+        title: "Intercepted Email",
+        objective: "Hotel security intercepted a suspicious email from Volkov's laptop. The meeting location mentioned in the body is hex-encoded.",
         data: {
-          type: "table",
-          header: "HOTEL COMMUNICATIONS LOG",
-          columns: ["Time", "Guest", "Type", "Recipient", "Subject"],
-          rows: [
-            ["09:15", "J. Williams", "Email", "office@corp.com", "Meeting Confirmed"],
-            ["11:30", "S. Nakamura", "Call", "+81-3-XXXX", "Business Inquiry"],
-            ["14:22", "V. Volkov", "Draft", "[REDACTED]", { value: "44 4F 43 4B 53", hint: "HEX" }],
-            ["16:45", "M. Petrova", "Email", "travel@agency.ru", "Flight Change"],
-            ["18:00", "C. Rivera", "Call", "+52-55-XXXX", "Room Service"],
+          type: "email",
+          from: "v.volkov@meridian-pvt.com",
+          to: "contact@pacificholdings.ky",
+          subject: "Re: Thursday Arrangement - URGENT",
+          date: "March 15, 2024 14:22",
+          body: [
+            "The package is ready for pickup.",
+            "",
+            "Meet at the usual place tomorrow at midnight.",
+            "Location code: 44 4F 43 4B 53",
+            "",
+            "Bring the documents we discussed. Make sure",
+            "you are not followed. Use the back entrance.",
+            "",
+            "Destroy this message after reading.",
           ],
-          footer: { label: "Draft messages pending", value: "1" },
-          encodedField: { row: 2, col: 4, hint: "Meeting location hex-encoded in subject" },
+          encodedLine: { index: 3, hint: "Location code is hex-encoded" },
+          attachments: ["route_map.pdf.encrypted", "contacts_backup.vcf"],
         },
         answer: "DOCKS",
+      },
+      {
+        title: "Room Service System",
+        objective: "The hotel's room service system logged suspicious orders. One item description is Base64-encoded. Decode it to find what was really delivered.",
+        data: {
+          type: "log",
+          header: "ROOM SERVICE - ORDER LOG",
+          entries: [
+            { timestamp: "2024-03-14 19:30:22", level: "info", message: "Room 1845: Dinner service - Steak, Wine" },
+            { timestamp: "2024-03-14 20:15:47", level: "info", message: "Room 1847: Champagne delivery" },
+            { timestamp: "2024-03-14 22:08:33", level: "warn", message: "Room 1847: Special request - VIP clearance required" },
+            { timestamp: "2024-03-14 23:45:19", level: "info", message: "Room 1847: Package delivery - S0VZUw==", encoded: true },
+            { timestamp: "2024-03-15 01:12:55", level: "debug", message: "Room 1847: DND activated - Do not enter" },
+            { timestamp: "2024-03-15 08:30:00", level: "error", message: "Room 1847: Checkout missed - Guest departed early" },
+          ],
+          encodedHint: "Package contents Base64-encoded",
+        },
+        answer: "KEYS",
       },
     ],
   },
@@ -298,23 +380,52 @@ const LOCATIONS: Record<string, {
         answer: "GOLD",
       },
       {
-        title: "After-Hours Access Log",
-        objective: "The warehouse security system logged a binary-encoded visitor badge at 2:34 AM. Convert the binary to identify who accessed the facility.",
+        title: "Forklift Terminal",
+        objective: "The warehouse forklift tracking system shows movement logs. One operator ID is hex-encoded. Decode it to identify the unauthorized operator.",
         data: {
-          type: "table",
-          header: "WAREHOUSE 7 - SECURITY ACCESS",
-          columns: ["Time", "Badge ID", "Door", "Duration", "Status"],
-          rows: [
-            ["18:30:00", "STAFF-001", "Main Gate", "8h 00m", { value: "Staff", badge: "active" }],
-            ["22:15:42", "GUARD-117", "Patrol Entry", "6h 00m", { value: "Security", badge: "active" }],
-            ["02:34:17", { value: "01001101 01000001 01010010 01001011", hint: "BINARY" }, "Loading Bay 3", "0h 38m", { value: "Unknown", badge: "warning" }],
-            ["05:45:00", "STAFF-023", "Main Gate", "12h 00m", { value: "Staff", badge: "active" }],
-            ["06:00:00", "MGMT-002", "Executive Entry", "10h 00m", { value: "Manager", badge: "active" }],
+          type: "terminal",
+          prompt: "WAREHOUSE MGMT SYSTEM v2.1.4",
+          lines: [
+            { content: "=== FORKLIFT MOVEMENT LOG ===", style: "info" },
+            { content: "Date: 2024-03-15" },
+            { prefix: "18:30:00", content: "FL-01 | Op: STAFF-001 | Bay 1 -> Bay 3" },
+            { prefix: "19:45:12", content: "FL-02 | Op: STAFF-017 | Bay 5 -> Loading" },
+            { prefix: "22:30:55", content: "FL-01 | Op: STAFF-001 | Bay 3 -> Storage" },
+            { prefix: "02:34:17", content: "FL-03 | Op: 4D41524B | Bay 7 -> Exit", encoded: true },
+            { prefix: "02:35:22", content: "ALERT: Unauthorized movement detected", style: "error" },
+            { prefix: "02:36:01", content: "Security notified - No response", style: "warning" },
+            { content: "=== END OF LOG ===" },
           ],
-          footer: { label: "Unauthorized Access Events", value: "1" },
-          encodedField: { row: 2, col: 1, hint: "Badge ID is binary-encoded" },
+          encodedHint: "Operator ID is hex-encoded",
         },
         answer: "MARK",
+      },
+      {
+        title: "Shipping Label Scanner",
+        objective: "A damaged shipping label was scanned. The destination city is encoded in binary. Decode it to find where the cargo was headed.",
+        data: {
+          type: "document",
+          letterhead: "PACIFIC FREIGHT LOGISTICS - SHIPPING LABEL",
+          date: "Ship Date: March 15, 2024",
+          reference: "Tracking #: PFL-2024-78923",
+          body: [
+            "FROM:",
+            "  Harbor Warehouse 7",
+            "  Berth 12, Container MSKU-4417-892",
+            "  Port of Los Angeles, CA 90731",
+            "",
+            "TO:",
+            "  Pacific Holdings Ltd",
+            "  Industrial Zone, Warehouse District",
+            "  01001101 01001001 01000001 01001101 01001001",
+            "",
+            "CONTENTS: Industrial Equipment (FRAGILE)",
+            "WEIGHT: 2,340 kg | DECLARED VALUE: $50,000",
+            "SPECIAL INSTRUCTIONS: NO INSPECTION",
+          ],
+          encodedLine: { index: 8, hint: "Destination city is binary-encoded" },
+        },
+        answer: "MIAMI",
       },
     ],
   },
@@ -344,23 +455,50 @@ const LOCATIONS: Record<string, {
         answer: "SMITH",
       },
       {
-        title: "Fund Allocation Records",
-        objective: "A hidden file contains a Base64-encoded purchase target. Decode it to discover what the laundered money is actually being used for.",
+        title: "Confidential Memo",
+        objective: "A shredded memo was reconstructed. The purchase item mentioned is Base64-encoded. Decode it to discover what the foundation is secretly buying.",
         data: {
-          type: "table",
-          header: "CONFIDENTIAL - FUND ALLOCATIONS",
-          columns: ["Allocation ID", "Amount", "Category", "Purpose", "Visibility"],
-          rows: [
-            ["ALLOC-2024-001", "$150,000.00", "Education", "Scholarships", { value: "Public", badge: "active" }],
-            ["ALLOC-2024-002", "$200,000.00", "Healthcare", "Medical Equipment", { value: "Public", badge: "active" }],
-            ["ALLOC-2024-003", "$85,000.00", "Community", "Youth Programs", { value: "Public", badge: "active" }],
-            ["ALLOC-2024-004", "$4,200,000.00", "Special Projects", { value: "QUlSQ1JBRlQ=", hint: "BASE64" }, { value: "Hidden", badge: "warning" }],
-            ["ALLOC-2024-005", "$65,000.00", "Admin", "Operating Costs", { value: "Internal", badge: "inactive" }],
+          type: "document",
+          letterhead: "VANCE FAMILY FOUNDATION - CONFIDENTIAL",
+          date: "March 14, 2024",
+          reference: "Internal Memo #VFF-2024-CONF-17",
+          body: [
+            "TO: Board of Directors (EYES ONLY)",
+            "FROM: E. Vance, Executive Director",
+            "RE: Special Acquisition Fund",
+            "",
+            "Following our discussion, I have secured the funds",
+            "for our special project. Total: $4,200,000",
+            "",
+            "The purchase will be listed as 'educational equipment'",
+            "but the actual item is: QUlSQ1JBRlQ=",
+            "",
+            "All documentation will route through our Cayman entity.",
+            "Destroy this memo after reading.",
           ],
-          footer: { label: "Total Allocated (Hidden)", value: "$4,200,000.00" },
-          encodedField: { row: 3, col: 3, hint: "Purpose is Base64-encoded" },
+          encodedLine: { index: 8, hint: "Actual purchase is Base64-encoded" },
+          signature: { name: "Eleanor Vance", title: "Executive Director" },
         },
         answer: "AIRCRAFT",
+      },
+      {
+        title: "IT System Logs",
+        objective: "The office IT system shows someone deleted files late at night. The deleted folder name is binary-encoded. Decode it to find what they tried to hide.",
+        data: {
+          type: "log",
+          header: "FILE SERVER ACTIVITY LOG",
+          entries: [
+            { timestamp: "2024-03-14 17:30:00", level: "info", message: "User E.VANCE logged in from Office-PC-01" },
+            { timestamp: "2024-03-14 17:45:22", level: "info", message: "Accessed: /Foundation/Donors/2024/" },
+            { timestamp: "2024-03-14 18:12:08", level: "info", message: "Modified: allocations_report.xlsx" },
+            { timestamp: "2024-03-14 23:55:33", level: "warn", message: "After-hours login detected: E.VANCE" },
+            { timestamp: "2024-03-14 23:58:47", level: "error", message: "DELETE: /Foundation/01000010 01010010 01001001 01000010 01000101 01010011/", encoded: true },
+            { timestamp: "2024-03-15 00:01:12", level: "info", message: "Recycle bin emptied - Permanent deletion" },
+            { timestamp: "2024-03-15 00:02:30", level: "info", message: "User E.VANCE logged out" },
+          ],
+          encodedHint: "Deleted folder name is binary-encoded",
+        },
+        answer: "BRIBES",
       },
     ],
   },
@@ -390,23 +528,49 @@ const LOCATIONS: Record<string, {
         answer: "WAVE",
       },
       {
-        title: "Navigation Logs",
-        objective: "The captain's digital navigation log shows a binary-encoded destination port. Decode it to find where the yacht is scheduled to travel next.",
+        title: "Radio Transmission Log",
+        objective: "The marina intercepted radio transmissions from Slip 47. The destination port mentioned is binary-encoded. Decode it.",
         data: {
-          type: "table",
-          header: "SLIP 47 - NAVIGATION HISTORY",
-          columns: ["Date", "Departure", "Destination", "Duration", "Cargo"],
-          rows: [
-            ["2024-02-28", "Sunset Marina", "Nassau, BS", "18h", "None Declared"],
-            ["2024-03-05", "Nassau, BS", "Sunset Marina", "16h", "None Declared"],
-            ["2024-03-10", "Sunset Marina", "Grand Cayman", "22h", "Special Freight"],
-            ["2024-03-13", "Grand Cayman", "Sunset Marina", "20h", "None Declared"],
-            ["2024-03-18", "Sunset Marina", { value: "01000011 01010101 01000010 01000001", hint: "BINARY" }, "Est. 24h", "CLASSIFIED"],
+          type: "terminal",
+          prompt: "VHF MARINE RADIO - CHANNEL 16 LOG",
+          lines: [
+            { content: "=== RECORDED TRANSMISSIONS ===", style: "info" },
+            { prefix: "[22:15:33]", content: "Slip 47 -> Coast Guard: Routine check-in" },
+            { prefix: "[22:18:45]", content: "Coast Guard -> Slip 47: Copy. Safe travels." },
+            { prefix: "[23:45:12]", content: "Slip 47 -> Unknown: Package secured. Ready to depart." },
+            { prefix: "[23:47:08]", content: "Unknown -> Slip 47: Confirmed. Head to 01000011 01010101 01000010 01000001", encoded: true },
+            { prefix: "[23:48:22]", content: "Slip 47 -> Unknown: Copy. ETA 24 hours." },
+            { prefix: "[23:50:00]", content: "TRANSMISSION ENDED", style: "warning" },
+            { content: "=== END OF LOG ===" },
           ],
-          footer: { label: "Next Scheduled Departure", value: "Thursday 0600" },
-          encodedField: { row: 4, col: 2, hint: "Destination is binary-encoded" },
+          encodedHint: "Destination is binary-encoded",
         },
         answer: "CUBA",
+      },
+      {
+        title: "Fuel Purchase Receipt",
+        objective: "A fuel receipt from the marina shows a suspicious purchase. The captain's name is Base64-encoded. Decode it to identify who fueled the yacht.",
+        data: {
+          type: "document",
+          letterhead: "SUNSET MARINA - FUEL STATION",
+          date: "March 15, 2024",
+          reference: "Receipt #SM-2024-4892",
+          body: [
+            "VESSEL: Pacific Wave (Slip 47)",
+            "FUEL TYPE: Marine Diesel",
+            "QUANTITY: 2,500 gallons",
+            "UNIT PRICE: $4.85/gal",
+            "TOTAL: $12,125.00",
+            "",
+            "PAYMENT: Corporate Card ****7823",
+            "AUTHORIZED BY: UklDSEFSRA==",
+            "",
+            "NOTE: Full tank - Long voyage preparation",
+            "DEPARTURE LOGGED: Thursday 0600",
+          ],
+          encodedLine: { index: 7, hint: "Captain name is Base64-encoded" },
+        },
+        answer: "RICHARD",
       },
     ],
   },
@@ -436,23 +600,51 @@ const LOCATIONS: Record<string, {
         answer: "CASH",
       },
       {
-        title: "Pilot Registry",
-        objective: "The pilot uses a hex-encoded callsign for radio communications. Decode it to identify the pilot's operational codename.",
+        title: "Control Tower Log",
+        objective: "The control tower recorded an unusual flight request. The pilot's callsign is hex-encoded. Decode it to identify the pilot.",
         data: {
-          type: "table",
-          header: "PILOT CERTIFICATION DATABASE",
-          columns: ["License #", "Name", "Callsign", "Rating", "Clearance"],
-          rows: [
-            ["ATP-78421", "R. Martinez", "EAGLE", "Commercial", { value: "Level 2", badge: "active" }],
-            ["ATP-78422", "S. O'Brien", "FALCON", "Commercial", { value: "Level 2", badge: "active" }],
-            ["ATP-78423", "J. Kim", "RAVEN", "Commercial", { value: "Level 3", badge: "active" }],
-            ["ATP-78424", "[CLASSIFIED]", { value: "48 41 57 4B", hint: "HEX" }, "ATP (8400+ hrs)", { value: "Level 4", badge: "warning" }],
-            ["ATP-78425", "M. Thompson", "SPARROW", "Private", { value: "Level 1", badge: "inactive" }],
+          type: "log",
+          header: "ATC TOWER - COMMUNICATION LOG",
+          entries: [
+            { timestamp: "05:30:00", level: "info", message: "N738VN: Request taxi clearance to runway 27" },
+            { timestamp: "05:32:15", level: "info", message: "Tower: N738VN cleared to taxi via Alpha" },
+            { timestamp: "05:45:22", level: "info", message: "N738VN: Ready for departure" },
+            { timestamp: "05:46:08", level: "warn", message: "Tower: Confirm pilot identification" },
+            { timestamp: "05:46:45", level: "info", message: "N738VN: Pilot callsign 48 41 57 4B", encoded: true },
+            { timestamp: "05:47:30", level: "info", message: "Tower: Cleared for takeoff runway 27" },
+            { timestamp: "05:48:12", level: "debug", message: "N738VN: Airborne. Switching to departure freq" },
           ],
-          footer: { label: "Classified Personnel", value: "1" },
-          encodedField: { row: 3, col: 2, hint: "Callsign is hex-encoded" },
+          encodedHint: "Pilot callsign is hex-encoded",
         },
         answer: "HAWK",
+      },
+      {
+        title: "Passenger Manifest Email",
+        objective: "An email with the passenger manifest was intercepted. One passenger name is binary-encoded. Decode it to identify the VIP on board.",
+        data: {
+          type: "email",
+          from: "dispatch@pacificaviation.com",
+          to: "n738vn-captain@secure.ky",
+          subject: "Flight N738VN - Passenger Manifest (CONFIDENTIAL)",
+          date: "March 15, 2024 04:30",
+          body: [
+            "Captain,",
+            "",
+            "Attached is the passenger manifest for today's flight.",
+            "",
+            "PASSENGERS:",
+            "1. Corporate Executive (Name withheld)",
+            "2. 01010110 01000001 01001110 01000011 01000101",
+            "",
+            "Both passengers have diplomatic clearance.",
+            "No customs inspection required at destination.",
+            "",
+            "Safe flight.",
+          ],
+          encodedLine: { index: 6, hint: "Passenger name is binary-encoded" },
+          attachments: ["manifest_signed.pdf", "customs_waiver.pdf"],
+        },
+        answer: "VANCE",
       },
     ],
   },

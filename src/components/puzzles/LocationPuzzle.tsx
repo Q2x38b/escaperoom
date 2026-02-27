@@ -10,10 +10,10 @@ import { useRoom } from '../../hooks/useRoom';
 import {
   AlertCircle, Send, Loader2, MapPin, CheckCircle2,
   FileText, Target, Users, Landmark, Hotel, Warehouse,
-  Building2, Ship, Plane, Database
+  Building2, Ship, Plane, Database, Terminal, Mail, ScrollText, Paperclip
 } from 'lucide-react';
 
-// Types for table data
+// Types for puzzle data
 interface TableCell {
   value: string;
   badge?: 'active' | 'inactive' | 'warning' | 'flag';
@@ -30,11 +30,39 @@ interface TableData {
   encodedField: { row: number; col: number; hint: string };
 }
 
-interface RecordData {
-  type: 'record';
+interface TerminalData {
+  type: 'terminal';
+  prompt: string;
+  lines: { prefix?: string; content: string; encoded?: boolean; style?: 'success' | 'error' | 'warning' | 'info' }[];
+  encodedHint: string;
+}
+
+interface DocumentData {
+  type: 'document';
+  letterhead: string;
+  date: string;
+  reference: string;
+  body: string[];
+  encodedLine: { index: number; hint: string };
+  signature?: { name: string; title: string };
+}
+
+interface EmailData {
+  type: 'email';
+  from: string;
+  to: string;
+  subject: string;
+  date: string;
+  body: string[];
+  encodedLine: { index: number; hint: string };
+  attachments?: string[];
+}
+
+interface LogData {
+  type: 'log';
   header: string;
-  fields: { label: string; value: string; highlight?: boolean }[];
-  encodedField: { label: string; value: string; hint: string };
+  entries: { timestamp: string; level: 'info' | 'warn' | 'error' | 'debug'; message: string; encoded?: boolean }[];
+  encodedHint: string;
 }
 
 // Render a table cell with proper styling
@@ -145,26 +173,202 @@ function PuzzleTable({ data }: { data: TableData }) {
   );
 }
 
-// Render record-style data (fallback)
-function PuzzleRecord({ data }: { data: RecordData }) {
+// Render terminal-style display
+function PuzzleTerminal({ data }: { data: TerminalData }) {
+  const lineStyles: Record<string, string> = {
+    success: 'text-green-400',
+    error: 'text-red-400',
+    warning: 'text-amber-400',
+    info: 'text-blue-400',
+  };
+
   return (
-    <div className="rounded-xl border border-white/20 bg-black/40 overflow-hidden">
-      <div className="px-4 py-3 border-b border-white/10 bg-white/5">
-        <span className="text-sm font-medium text-white tracking-wide">{data.header}</span>
+    <div className="rounded-xl border border-green-500/30 bg-black overflow-hidden font-mono">
+      {/* Terminal Header */}
+      <div className="px-4 py-2 border-b border-green-500/20 bg-green-500/5 flex items-center gap-2">
+        <Terminal className="w-4 h-4 text-green-400" />
+        <span className="text-sm text-green-400">{data.prompt}</span>
+        <div className="ml-auto flex gap-1.5">
+          <div className="w-3 h-3 rounded-full bg-red-500/60" />
+          <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
+          <div className="w-3 h-3 rounded-full bg-green-500/60" />
+        </div>
       </div>
-      <div className="p-4 space-y-2">
-        {data.fields.map((field, idx) => (
-          <div key={idx} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
-            <span className="text-sm text-white/60">{field.label}</span>
-            <span className={`text-sm ${field.highlight ? 'font-mono text-amber-400' : 'text-white'}`}>
-              {field.value}
+
+      {/* Terminal Content */}
+      <div className="p-4 space-y-1 text-sm max-h-64 overflow-y-auto">
+        {data.lines.map((line, idx) => (
+          <div key={idx} className={`${line.encoded ? 'bg-amber-500/10 px-2 py-1 rounded' : ''}`}>
+            {line.prefix && (
+              <span className="text-white/50">{line.prefix} </span>
+            )}
+            <span className={line.encoded ? 'text-amber-400 font-medium' : (line.style ? lineStyles[line.style] : 'text-green-300')}>
+              {line.content}
             </span>
           </div>
         ))}
-        <div className="mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-          <div className="text-xs text-amber-400 uppercase tracking-wider mb-1">{data.encodedField.hint}</div>
-          <div className="font-mono text-amber-400 font-medium">{data.encodedField.value}</div>
+      </div>
+
+      {/* Hint Footer */}
+      <div className="px-4 py-2 border-t border-green-500/20 bg-green-500/5">
+        <span className="text-xs text-amber-400">HINT: {data.encodedHint}</span>
+      </div>
+    </div>
+  );
+}
+
+// Render official document
+function PuzzleDocument({ data }: { data: DocumentData }) {
+  return (
+    <div className="rounded-xl border border-white/20 bg-white/[0.02] overflow-hidden">
+      {/* Letterhead */}
+      <div className="px-5 py-4 border-b border-white/10 bg-white/5">
+        <div className="flex items-center gap-2 mb-2">
+          <ScrollText className="w-4 h-4 text-blue-400" />
+          <span className="text-sm font-semibold text-white tracking-wide">{data.letterhead}</span>
         </div>
+        <div className="flex gap-6 text-xs text-white/50">
+          <span>Date: {data.date}</span>
+          <span>Ref: {data.reference}</span>
+        </div>
+      </div>
+
+      {/* Document Body */}
+      <div className="p-5 space-y-2 text-sm">
+        {data.body.map((line, idx) => (
+          <p
+            key={idx}
+            className={`${
+              line === '' ? 'h-3' :
+              idx === data.encodedLine.index
+                ? 'font-mono text-amber-400 bg-amber-500/10 px-2 py-1 rounded'
+                : 'text-white/80'
+            }`}
+          >
+            {line}
+          </p>
+        ))}
+      </div>
+
+      {/* Signature */}
+      {data.signature && (
+        <div className="px-5 py-3 border-t border-white/10">
+          <p className="text-sm text-white/80 italic">{data.signature.name}</p>
+          <p className="text-xs text-white/50">{data.signature.title}</p>
+        </div>
+      )}
+
+      {/* Hint */}
+      <div className="px-5 py-2 bg-amber-500/5 border-t border-amber-500/20">
+        <span className="text-xs text-amber-400">DECODE: {data.encodedLine.hint}</span>
+      </div>
+    </div>
+  );
+}
+
+// Render email display
+function PuzzleEmail({ data }: { data: EmailData }) {
+  return (
+    <div className="rounded-xl border border-white/20 bg-white/[0.02] overflow-hidden">
+      {/* Email Header */}
+      <div className="px-4 py-3 border-b border-white/10 bg-white/5 space-y-2">
+        <div className="flex items-center gap-2">
+          <Mail className="w-4 h-4 text-blue-400" />
+          <span className="text-sm font-medium text-white">{data.subject}</span>
+        </div>
+        <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+          <span className="text-white/40">From:</span>
+          <span className="text-white/70">{data.from}</span>
+          <span className="text-white/40">To:</span>
+          <span className="text-white/70">{data.to}</span>
+          <span className="text-white/40">Date:</span>
+          <span className="text-white/70">{data.date}</span>
+        </div>
+      </div>
+
+      {/* Email Body */}
+      <div className="p-4 space-y-2 text-sm">
+        {data.body.map((line, idx) => (
+          <p
+            key={idx}
+            className={`${
+              line === '' ? 'h-3' :
+              idx === data.encodedLine.index
+                ? 'font-mono text-amber-400 bg-amber-500/10 px-2 py-1 rounded'
+                : 'text-white/80'
+            }`}
+          >
+            {line}
+          </p>
+        ))}
+      </div>
+
+      {/* Attachments */}
+      {data.attachments && data.attachments.length > 0 && (
+        <div className="px-4 py-2 border-t border-white/10 bg-white/5">
+          <div className="flex items-center gap-2 text-xs text-white/50 mb-1">
+            <Paperclip className="w-3 h-3" />
+            <span>Attachments ({data.attachments.length})</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {data.attachments.map((att, idx) => (
+              <span key={idx} className="text-xs px-2 py-1 bg-white/10 rounded text-white/70">
+                {att}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Hint */}
+      <div className="px-4 py-2 bg-amber-500/5 border-t border-amber-500/20">
+        <span className="text-xs text-amber-400">DECODE: {data.encodedLine.hint}</span>
+      </div>
+    </div>
+  );
+}
+
+// Render log display
+function PuzzleLog({ data }: { data: LogData }) {
+  const levelStyles: Record<string, { bg: string; text: string; label: string }> = {
+    info: { bg: 'bg-blue-500/20', text: 'text-blue-400', label: 'INFO' },
+    warn: { bg: 'bg-amber-500/20', text: 'text-amber-400', label: 'WARN' },
+    error: { bg: 'bg-red-500/20', text: 'text-red-400', label: 'ERR' },
+    debug: { bg: 'bg-white/10', text: 'text-white/50', label: 'DBG' },
+  };
+
+  return (
+    <div className="rounded-xl border border-white/20 bg-black/60 overflow-hidden font-mono">
+      {/* Log Header */}
+      <div className="px-4 py-2 border-b border-white/10 bg-white/5 flex items-center gap-2">
+        <FileText className="w-4 h-4 text-white/60" />
+        <span className="text-sm text-white/80">{data.header}</span>
+      </div>
+
+      {/* Log Entries */}
+      <div className="p-3 space-y-1.5 text-xs max-h-72 overflow-y-auto">
+        {data.entries.map((entry, idx) => {
+          const style = levelStyles[entry.level];
+          return (
+            <div
+              key={idx}
+              className={`flex items-start gap-2 p-2 rounded ${entry.encoded ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-white/[0.02]'}`}
+            >
+              <span className="text-white/40 shrink-0">{entry.timestamp}</span>
+              <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${style.bg} ${style.text}`}>
+                {style.label}
+              </span>
+              <span className={entry.encoded ? 'text-amber-400 font-medium' : 'text-white/70 flex-1'}>
+                {entry.message}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Hint */}
+      <div className="px-4 py-2 border-t border-white/10 bg-white/5">
+        <span className="text-xs text-amber-400">HINT: {data.encodedHint}</span>
       </div>
     </div>
   );
@@ -402,12 +606,12 @@ export function LocationPuzzle() {
               <p className="text-sm text-white">{puzzle.objective}</p>
             </div>
 
-            {/* Puzzle Data Table */}
-            {puzzle.data.type === 'table' ? (
-              <PuzzleTable data={puzzle.data as TableData} />
-            ) : (
-              <PuzzleRecord data={puzzle.data as RecordData} />
-            )}
+            {/* Puzzle Data Display */}
+            {puzzle.data.type === 'table' && <PuzzleTable data={puzzle.data as TableData} />}
+            {puzzle.data.type === 'terminal' && <PuzzleTerminal data={puzzle.data as TerminalData} />}
+            {puzzle.data.type === 'document' && <PuzzleDocument data={puzzle.data as DocumentData} />}
+            {puzzle.data.type === 'email' && <PuzzleEmail data={puzzle.data as EmailData} />}
+            {puzzle.data.type === 'log' && <PuzzleLog data={puzzle.data as LogData} />}
 
             {/* Answer Input */}
             <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-3 pt-2 border-t border-white/10">
