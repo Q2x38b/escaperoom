@@ -107,13 +107,13 @@ export const joinRoom = mutation({
       throw new Error("Room is locked");
     }
 
-    // Check player count (max 4)
+    // Check player count (max 6)
     const players = await ctx.db
       .query("players")
       .withIndex("by_room", (q) => q.eq("roomId", room._id))
       .collect();
 
-    if (players.length >= 4) {
+    if (players.length >= 6) {
       throw new Error("Room is full");
     }
 

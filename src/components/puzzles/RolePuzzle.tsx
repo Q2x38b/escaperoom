@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent } from '../ui/card';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Alert, AlertDescription } from '../ui/alert';
@@ -10,7 +10,8 @@ import { useRoom } from '../../hooks/useRoom';
 import { useGameStore } from '../../stores/gameStore';
 import { TypingIndicator } from '../game/TypingIndicator';
 import {
-  AlertCircle, Send, Loader2, Lock, Eye, FileCode, Key, UserCheck
+  AlertCircle, Send, Loader2, Lock, Eye, FileCode, Key, UserCheck,
+  FileText, AlertTriangle, Target
 } from 'lucide-react';
 
 interface RolePuzzleProps {
@@ -28,6 +29,16 @@ interface RolePuzzleData {
     title: string;
     data: string[];
     description: string;
+  };
+  missionBrief?: {
+    title: string;
+    objective: string;
+    context: string;
+  };
+  documentInfo?: {
+    type: string;
+    id: string;
+    status: string;
   };
 }
 
@@ -47,6 +58,12 @@ const ROLE_COLORS = {
   analyst: 'text-blue-400 border-blue-400/30 bg-blue-400/10',
   decoder: 'text-purple-400 border-purple-400/30 bg-purple-400/10',
   fieldAgent: 'text-green-400 border-green-400/30 bg-green-400/10',
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  'INTERCEPTED': 'text-amber-400 bg-amber-400/10 border-amber-400/30',
+  'FLAGGED': 'text-red-400 bg-red-400/10 border-red-400/30',
+  'RECOVERED': 'text-cyan-400 bg-cyan-400/10 border-cyan-400/30',
 };
 
 export function RolePuzzle({ puzzleIndex }: RolePuzzleProps) {
@@ -183,198 +200,255 @@ export function RolePuzzle({ puzzleIndex }: RolePuzzleProps) {
   const puzzleData = rolePuzzleData as RolePuzzleData;
 
   return (
-    <Card className="bank-card">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <RoleIcon className="w-5 h-5" />
-              {puzzleData.title}
-            </CardTitle>
-            <CardDescription className="mt-1">
-              {puzzleData.description}
-            </CardDescription>
-          </div>
-          <Badge
-            variant="outline"
-            className={`font-medium text-xs ${ROLE_COLORS[currentPlayerRole]}`}
-          >
-            {ROLE_LABELS[currentPlayerRole]}
-          </Badge>
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-5">
-        {/* Team Roles Display */}
-        <div className="flex flex-wrap gap-2 p-3 rounded-lg bg-white/5 border border-white/20">
-          <span className="text-xs text-white/70 w-full mb-1">Your Team:</span>
-          <Badge
-            variant="outline"
-            className={`text-xs ${ROLE_COLORS[currentPlayerRole]}`}
-          >
-            You: {ROLE_LABELS[currentPlayerRole]}
-          </Badge>
-          {teammates.map(teammate => (
-            <Badge
-              key={teammate.id}
-              variant="outline"
-              className={`text-xs ${teammate.role ? ROLE_COLORS[teammate.role] : 'text-white/60'}`}
-            >
-              {teammate.nickname}: {teammate.role ? ROLE_LABELS[teammate.role] : 'Unassigned'}
-            </Badge>
-          ))}
-        </div>
-
-        {/* Role-specific data for Analyst */}
-        {currentPlayerRole === 'analyst' && puzzleData.data && (
-          <div className="rounded-xl border border-blue-500/30 bg-blue-500/5 overflow-hidden">
-            <div className="px-4 py-3 border-b border-blue-500/20 bg-blue-500/10">
-              <span className="text-sm font-medium text-blue-400 flex items-center gap-2">
-                <Eye className="w-4 h-4" />
-                CLASSIFIED DATA - SHARE WITH YOUR TEAM
-              </span>
-            </div>
-            <div className="p-4 space-y-2">
-              {puzzleData.data.map((line: string, idx: number) => (
-                <div
-                  key={idx}
-                  className="font-mono text-sm text-white py-1.5 px-3 bg-white/5 rounded"
-                >
-                  {line}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Role-specific data for Decoder */}
-        {currentPlayerRole === 'decoder' && puzzleData.data && (
-          <div className="rounded-xl border border-purple-500/30 bg-purple-500/5 overflow-hidden">
-            <div className="px-4 py-3 border-b border-purple-500/20 bg-purple-500/10">
-              <span className="text-sm font-medium text-purple-400 flex items-center gap-2">
-                <Key className="w-4 h-4" />
-                DECRYPTION REFERENCE - HELP YOUR TEAM DECODE
-              </span>
-            </div>
-            <div className="p-4 space-y-2">
-              {puzzleData.data.map((line: string, idx: number) => (
-                <div
-                  key={idx}
-                  className="font-mono text-xs text-white/90 py-1.5 px-3 bg-white/5 rounded"
-                >
-                  {line}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Field Agent - has submit access, and in 2-player mode also sees decoder info */}
-        {currentPlayerRole === 'fieldAgent' && (
-          <>
-            {/* Info box for field agent */}
-            <div className="flex gap-3 p-4 rounded-lg bg-green-500/5 border border-green-500/30">
-              <UserCheck className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
-              <div className="text-sm text-white/90">
-                <span className="text-green-400 font-medium">Field Agent: </span>
-                You have authorization to submit answers. Coordinate with your Analyst and Decoder to get the information you need.
+    <div className="space-y-4">
+      {/* Mission Brief Card - Visible to ALL players */}
+      {puzzleData.missionBrief && (
+        <Card className="bank-card border-amber-500/30">
+          <CardContent className="p-4 space-y-3">
+            {/* Mission Header */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-400" />
+                <span className="font-mono text-amber-400 text-sm font-bold tracking-wider">
+                  {puzzleData.missionBrief.title}
+                </span>
               </div>
-            </div>
-
-            {/* 2-player mode: Field Agent also sees decoder data */}
-            {puzzleData.decoderData && (
-              <div className="rounded-xl border border-purple-500/30 bg-purple-500/5 overflow-hidden">
-                <div className="px-4 py-3 border-b border-purple-500/20 bg-purple-500/10">
-                  <span className="text-sm font-medium text-purple-400 flex items-center gap-2">
-                    <Key className="w-4 h-4" />
-                    {puzzleData.decoderData.title}
-                  </span>
-                </div>
-                <div className="p-4 space-y-2">
-                  {puzzleData.decoderData.data.map((line: string, idx: number) => (
-                    <div
-                      key={idx}
-                      className="font-mono text-xs text-white/90 py-1.5 px-3 bg-white/5 rounded"
-                    >
-                      {line}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Answer input - only field agent can submit */}
-        {puzzleData.canSubmit ? (
-          <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-3">
-            <div className="flex items-center justify-between">
-              <label htmlFor={`puzzle${puzzleIndex}-answer`} className="text-sm font-medium text-white cursor-pointer">
-                Enter Decoded Answer
-              </label>
-              {otherPlayerTyping && typingPlayer && (
-                <TypingIndicator nickname={typingPlayer.nickname} />
+              {puzzleData.documentInfo && (
+                <Badge
+                  variant="outline"
+                  className={`text-xs font-mono shrink-0 ${STATUS_COLORS[puzzleData.documentInfo.status] || 'text-white/60'}`}
+                >
+                  {puzzleData.documentInfo.status}
+                </Badge>
               )}
             </div>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Input
-                  id={`puzzle${puzzleIndex}-answer`}
-                  type="text"
-                  value={answer}
-                  onChange={(e) => handleInputChange(e.target.value)}
-                  placeholder={otherPlayerTyping ? `${typingPlayer?.nickname} is typing...` : "ENTER ANSWER"}
-                  className={`font-mono uppercase h-10 bg-white/10 border-white/40 text-white placeholder:text-white/60 ${otherPlayerTyping ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  disabled={otherPlayerTyping || isSubmitting}
-                  onFocus={handleFocus}
-                  onBlur={handleBlur}
-                  aria-describedby={error ? `puzzle${puzzleIndex}-error` : undefined}
-                />
-                {otherPlayerTyping && (
-                  <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500 pointer-events-none" aria-hidden="true" />
-                )}
+
+            {/* Document Info */}
+            {puzzleData.documentInfo && (
+              <div className="flex flex-wrap gap-3 text-xs text-white/60 font-mono">
+                <span className="flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5" />
+                  {puzzleData.documentInfo.type}
+                </span>
+                <span className="text-white/40">|</span>
+                <span>ID: {puzzleData.documentInfo.id}</span>
               </div>
-              <Button
-                type="submit"
-                disabled={!answer.trim() || isSubmitting || otherPlayerTyping}
-                aria-label="Submit answer"
-                className="h-10 px-4"
-              >
-                {isSubmitting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
-                ) : (
-                  <Send className="w-4 h-4" aria-hidden="true" />
-                )}
-              </Button>
+            )}
+
+            {/* Objective */}
+            <div className="flex gap-2 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+              <Target className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="text-xs text-amber-400/80 uppercase tracking-wider">Objective:</span>
+                <p className="text-sm text-white mt-0.5">{puzzleData.missionBrief.objective}</p>
+              </div>
             </div>
 
-            {error && (
-              <Alert id={`puzzle${puzzleIndex}-error`} variant="destructive" className="py-2" role="alert">
-                <AlertCircle className="w-4 h-4" aria-hidden="true" />
-                <AlertDescription className="text-sm">{error}</AlertDescription>
-              </Alert>
-            )}
-          </form>
-        ) : (
-          <div className="p-4 rounded-lg bg-white/5 border border-white/20 text-center">
-            <Lock className="w-5 h-5 mx-auto mb-2 text-white/60" />
-            <p className="text-sm text-white/70">
-              Only the <span className="text-green-400 font-medium">Field Agent</span> can submit answers.
+            {/* Context */}
+            <p className="text-sm text-white/70 leading-relaxed">
+              {puzzleData.missionBrief.context}
             </p>
-            <p className="text-xs text-white/50 mt-1">
-              Share your information via chat to help them solve the puzzle!
-            </p>
-          </div>
-        )}
 
-        {/* Current answer display for non-field agents */}
-        {!puzzleData.canSubmit && answer && (
-          <div className="p-3 rounded-lg bg-white/5 border border-white/20">
-            <span className="text-xs text-white/60">Current team answer: </span>
-            <span className="font-mono text-white">{answer}</span>
+            {/* Team Roles Display */}
+            <div className="flex flex-wrap gap-2 pt-2 border-t border-white/10">
+              <span className="text-xs text-white/50 w-full mb-1">Investigation Team:</span>
+              <Badge
+                variant="outline"
+                className={`text-xs ${ROLE_COLORS[currentPlayerRole]}`}
+              >
+                You: {ROLE_LABELS[currentPlayerRole]}
+              </Badge>
+              {teammates.map(teammate => (
+                <Badge
+                  key={teammate.id}
+                  variant="outline"
+                  className={`text-xs ${teammate.role ? ROLE_COLORS[teammate.role] : 'text-white/60'}`}
+                >
+                  {teammate.nickname}: {teammate.role ? ROLE_LABELS[teammate.role] : 'Unassigned'}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Role-Specific Data Card */}
+      <Card className="bank-card">
+        <CardContent className="p-4 space-y-4">
+          {/* Role Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <RoleIcon className="w-5 h-5" />
+              <span className="font-medium text-white">{puzzleData.title}</span>
+            </div>
+            <Badge
+              variant="outline"
+              className={`font-medium text-xs ${ROLE_COLORS[currentPlayerRole]}`}
+            >
+              {ROLE_LABELS[currentPlayerRole]}
+            </Badge>
           </div>
-        )}
-      </CardContent>
-    </Card>
+
+          {/* Role Description */}
+          <p className="text-sm text-white/70">{puzzleData.description}</p>
+
+          {/* Role-specific data for Analyst */}
+          {currentPlayerRole === 'analyst' && puzzleData.data && (
+            <div className="rounded-xl border border-blue-500/30 bg-blue-500/5 overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-blue-500/20 bg-blue-500/10">
+                <span className="text-xs font-medium text-blue-400 flex items-center gap-2 uppercase tracking-wider">
+                  <Eye className="w-3.5 h-3.5" />
+                  Classified Data - Share via Chat
+                </span>
+              </div>
+              <div className="p-3 space-y-1.5">
+                {puzzleData.data.map((line: string, idx: number) => (
+                  <div
+                    key={idx}
+                    className={`font-mono text-sm py-1.5 px-3 rounded ${
+                      line.startsWith('━') ? 'text-blue-400/70 text-xs' : 'text-white bg-white/5'
+                    }`}
+                  >
+                    {line}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Role-specific data for Decoder */}
+          {currentPlayerRole === 'decoder' && puzzleData.data && (
+            <div className="rounded-xl border border-purple-500/30 bg-purple-500/5 overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-purple-500/20 bg-purple-500/10">
+                <span className="text-xs font-medium text-purple-400 flex items-center gap-2 uppercase tracking-wider">
+                  <Key className="w-3.5 h-3.5" />
+                  Decryption Reference
+                </span>
+              </div>
+              <div className="p-3 space-y-1.5">
+                {puzzleData.data.map((line: string, idx: number) => (
+                  <div
+                    key={idx}
+                    className={`font-mono text-xs py-1.5 px-3 rounded ${
+                      line.startsWith('━') ? 'text-purple-400/70' : 'text-white/90 bg-white/5'
+                    }`}
+                  >
+                    {line}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Field Agent - has submit access, and in 2-player mode also sees decoder info */}
+          {currentPlayerRole === 'fieldAgent' && (
+            <>
+              {/* Info box for field agent */}
+              <div className="flex gap-3 p-3 rounded-lg bg-green-500/5 border border-green-500/30">
+                <UserCheck className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
+                <div className="text-sm text-white/90">
+                  <span className="text-green-400 font-medium">Authorized to Submit: </span>
+                  Coordinate with your team via chat. They have the data you need.
+                </div>
+              </div>
+
+              {/* 2-player mode: Field Agent also sees decoder data */}
+              {puzzleData.decoderData && (
+                <div className="rounded-xl border border-purple-500/30 bg-purple-500/5 overflow-hidden">
+                  <div className="px-4 py-2.5 border-b border-purple-500/20 bg-purple-500/10">
+                    <span className="text-xs font-medium text-purple-400 flex items-center gap-2 uppercase tracking-wider">
+                      <Key className="w-3.5 h-3.5" />
+                      {puzzleData.decoderData.title}
+                    </span>
+                  </div>
+                  <div className="p-3 space-y-1.5">
+                    {puzzleData.decoderData.data.map((line: string, idx: number) => (
+                      <div
+                        key={idx}
+                        className={`font-mono text-xs py-1.5 px-3 rounded ${
+                          line.startsWith('━') ? 'text-purple-400/70' : 'text-white/90 bg-white/5'
+                        }`}
+                      >
+                        {line}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Answer input - only field agent can submit */}
+          {puzzleData.canSubmit ? (
+            <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-3 pt-2 border-t border-white/10">
+              <div className="flex items-center justify-between">
+                <label htmlFor={`puzzle${puzzleIndex}-answer`} className="text-sm font-medium text-white cursor-pointer">
+                  Submit Answer
+                </label>
+                {otherPlayerTyping && typingPlayer && (
+                  <TypingIndicator nickname={typingPlayer.nickname} />
+                )}
+              </div>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    id={`puzzle${puzzleIndex}-answer`}
+                    type="text"
+                    value={answer}
+                    onChange={(e) => handleInputChange(e.target.value)}
+                    placeholder={otherPlayerTyping ? `${typingPlayer?.nickname} is typing...` : "ENTER DECODED ANSWER"}
+                    className={`font-mono uppercase h-11 bg-white/10 border-white/40 text-white placeholder:text-white/50 ${otherPlayerTyping ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    disabled={otherPlayerTyping || isSubmitting}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                    aria-describedby={error ? `puzzle${puzzleIndex}-error` : undefined}
+                  />
+                  {otherPlayerTyping && (
+                    <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500 pointer-events-none" aria-hidden="true" />
+                  )}
+                </div>
+                <Button
+                  type="submit"
+                  disabled={!answer.trim() || isSubmitting || otherPlayerTyping}
+                  aria-label="Submit answer"
+                  className="h-11 px-5"
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Send className="w-4 h-4" aria-hidden="true" />
+                  )}
+                </Button>
+              </div>
+
+              {error && (
+                <Alert id={`puzzle${puzzleIndex}-error`} variant="destructive" className="py-2" role="alert">
+                  <AlertCircle className="w-4 h-4" aria-hidden="true" />
+                  <AlertDescription className="text-sm">{error}</AlertDescription>
+                </Alert>
+              )}
+            </form>
+          ) : (
+            <div className="p-4 rounded-lg bg-white/5 border border-white/20 text-center">
+              <Lock className="w-5 h-5 mx-auto mb-2 text-white/50" />
+              <p className="text-sm text-white/70">
+                Only the <span className="text-green-400 font-medium">Field Agent</span> can submit answers.
+              </p>
+              <p className="text-xs text-white/50 mt-1">
+                Share your data via chat to help them solve the puzzle!
+              </p>
+            </div>
+          )}
+
+          {/* Current answer display for non-field agents */}
+          {!puzzleData.canSubmit && answer && (
+            <div className="p-3 rounded-lg bg-white/5 border border-white/20">
+              <span className="text-xs text-white/60">Team answer in progress: </span>
+              <span className="font-mono text-white">{answer}</span>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
