@@ -38,7 +38,6 @@ export function ProgressTracker() {
             const isSolved = solvedPuzzles.includes(index);
             const isCurrent = currentPuzzle === index;
             const isLocked = index > currentPuzzle;
-            const prevSolved = index > 0 && solvedPuzzles.includes(index - 1);
 
             return (
               <div key={index} className="flex items-center flex-1 last:flex-none">
