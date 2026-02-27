@@ -10,8 +10,165 @@ import { useRoom } from '../../hooks/useRoom';
 import {
   AlertCircle, Send, Loader2, MapPin, CheckCircle2,
   FileText, Target, Users, Landmark, Hotel, Warehouse,
-  Building2, Ship, Plane
+  Building2, Ship, Plane, Database
 } from 'lucide-react';
+
+// Types for table data
+interface TableCell {
+  value: string;
+  badge?: 'active' | 'inactive' | 'warning' | 'flag';
+  flag?: string;
+  hint?: string;
+}
+
+interface TableData {
+  type: 'table';
+  header: string;
+  columns: string[];
+  rows: (string | TableCell)[][];
+  footer?: { label: string; value: string };
+  encodedField: { row: number; col: number; hint: string };
+}
+
+interface RecordData {
+  type: 'record';
+  header: string;
+  fields: { label: string; value: string; highlight?: boolean }[];
+  encodedField: { label: string; value: string; hint: string };
+}
+
+// Render a table cell with proper styling
+function TableCellRenderer({ cell, isEncoded }: { cell: string | TableCell; isEncoded: boolean }) {
+  if (typeof cell === 'string') {
+    return <span className={isEncoded ? 'font-mono text-amber-400 font-medium' : ''}>{cell}</span>;
+  }
+
+  const { value, badge, flag, hint } = cell;
+
+  // Badge rendering
+  if (badge) {
+    const badgeStyles: Record<string, string> = {
+      active: 'bg-green-500/20 text-green-400 border-green-500/30',
+      inactive: 'bg-white/10 text-white/50 border-white/20',
+      warning: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+      flag: 'bg-red-500/20 text-red-400 border-red-500/30',
+    };
+    return (
+      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${badgeStyles[badge]}`}>
+        {value}
+      </span>
+    );
+  }
+
+  // Flag with location
+  if (flag) {
+    return (
+      <span className="flex items-center gap-1.5">
+        <span>{flag}</span>
+        <span>{value}</span>
+      </span>
+    );
+  }
+
+  // Encoded/hint field
+  if (hint) {
+    return (
+      <span className="font-mono text-amber-400 font-medium bg-amber-500/10 px-1.5 py-0.5 rounded">
+        {value}
+      </span>
+    );
+  }
+
+  return <span className={isEncoded ? 'font-mono text-amber-400 font-medium' : ''}>{value}</span>;
+}
+
+// Render the puzzle table
+function PuzzleTable({ data }: { data: TableData }) {
+  return (
+    <div className="rounded-xl border border-white/20 bg-black/40 overflow-hidden">
+      {/* Table Header */}
+      <div className="px-4 py-3 border-b border-white/10 bg-white/5">
+        <div className="flex items-center gap-2">
+          <Database className="w-4 h-4 text-blue-400" />
+          <span className="text-sm font-medium text-white tracking-wide">{data.header}</span>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-white/10">
+              {data.columns.map((col, idx) => (
+                <th
+                  key={idx}
+                  className="px-4 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider whitespace-nowrap"
+                >
+                  {col}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5">
+            {data.rows.map((row, rowIdx) => (
+              <tr
+                key={rowIdx}
+                className={`hover:bg-white/5 transition-colors ${
+                  rowIdx === data.encodedField.row ? 'bg-amber-500/5' : ''
+                }`}
+              >
+                {row.map((cell, colIdx) => (
+                  <td
+                    key={colIdx}
+                    className="px-4 py-3 text-sm text-white whitespace-nowrap"
+                  >
+                    <TableCellRenderer
+                      cell={cell}
+                      isEncoded={rowIdx === data.encodedField.row && colIdx === data.encodedField.col}
+                    />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Footer */}
+      {data.footer && (
+        <div className="px-4 py-3 border-t border-white/10 bg-white/5 flex justify-between items-center">
+          <span className="text-sm text-white/60">{data.footer.label}</span>
+          <span className="text-sm font-medium text-white tabular-nums">{data.footer.value}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Render record-style data (fallback)
+function PuzzleRecord({ data }: { data: RecordData }) {
+  return (
+    <div className="rounded-xl border border-white/20 bg-black/40 overflow-hidden">
+      <div className="px-4 py-3 border-b border-white/10 bg-white/5">
+        <span className="text-sm font-medium text-white tracking-wide">{data.header}</span>
+      </div>
+      <div className="p-4 space-y-2">
+        {data.fields.map((field, idx) => (
+          <div key={idx} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
+            <span className="text-sm text-white/60">{field.label}</span>
+            <span className={`text-sm ${field.highlight ? 'font-mono text-amber-400' : 'text-white'}`}>
+              {field.value}
+            </span>
+          </div>
+        ))}
+        <div className="mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+          <div className="text-xs text-amber-400 uppercase tracking-wider mb-1">{data.encodedField.hint}</div>
+          <div className="font-mono text-amber-400 font-medium">{data.encodedField.value}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // Map icon names to Lucide components
 const LOCATION_ICONS: Record<string, React.ElementType> = {
@@ -245,26 +402,12 @@ export function LocationPuzzle() {
               <p className="text-sm text-white">{puzzle.objective}</p>
             </div>
 
-            {/* Puzzle Data */}
-            <div className="rounded-xl border border-white/20 bg-white/5 overflow-hidden">
-              <div className="px-4 py-2.5 border-b border-white/10 bg-white/5">
-                <span className="text-xs font-medium text-white/80 uppercase tracking-wider">
-                  Intel Data
-                </span>
-              </div>
-              <div className="p-3 space-y-1">
-                {puzzle.data.map((line, idx) => (
-                  <div
-                    key={idx}
-                    className={`font-mono text-sm py-1.5 px-3 rounded ${
-                      line === '' ? 'h-2' : 'text-white bg-white/5'
-                    }`}
-                  >
-                    {line}
-                  </div>
-                ))}
-              </div>
-            </div>
+            {/* Puzzle Data Table */}
+            {puzzle.data.type === 'table' ? (
+              <PuzzleTable data={puzzle.data as TableData} />
+            ) : (
+              <PuzzleRecord data={puzzle.data as RecordData} />
+            )}
 
             {/* Answer Input */}
             <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-3 pt-2 border-t border-white/10">
