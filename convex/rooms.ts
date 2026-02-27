@@ -112,28 +112,6 @@ export const joinRoom = mutation({
       throw new Error("Room is full");
     }
 
-    // Determine role for new player (only needed if joining mid-game)
-    let assignedRole: "analyst" | "decoder" | "fieldAgent" | undefined = undefined;
-
-    if (room.phase === "playing") {
-      // Assign a supportive role for mid-game joins
-      // Count existing roles to balance the team
-      const roleCounts = { analyst: 0, decoder: 0, fieldAgent: 0 };
-      for (const p of players) {
-        if (p.role) {
-          roleCounts[p.role]++;
-        }
-      }
-
-      // Assign the role with lowest count (prefer analyst/decoder as they support)
-      // Never assign fieldAgent mid-game as that role has submit powers
-      if (roleCounts.analyst <= roleCounts.decoder) {
-        assignedRole = "analyst";
-      } else {
-        assignedRole = "decoder";
-      }
-    }
-
     // Add player
     await ctx.db.insert("players", {
       roomId: room._id,
@@ -143,7 +121,6 @@ export const joinRoom = mutation({
       isReady: true,
       joinedAt: now,
       lastSeen: now,
-      role: assignedRole,
     });
 
     return { roomId: room._id, code: room.code };
@@ -469,16 +446,6 @@ export const endGame = mutation({
     // Verify the requester is the host
     if (room.hostId !== args.hostIdentifier) {
       throw new Error("Only the host can end the game");
-    }
-
-    // Clear player roles
-    const players = await ctx.db
-      .query("players")
-      .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
-      .collect();
-
-    for (const player of players) {
-      await ctx.db.patch(player._id, { role: undefined });
     }
 
     // Reset room to waiting state by replacing the document
