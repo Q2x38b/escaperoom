@@ -47,6 +47,7 @@ export interface UseRoomReturn {
   leaveRoom: () => Promise<void>;
   clearError: () => void;
   startGame: () => Promise<void>;
+  startGameWithLocations: () => Promise<void>;
   endGame: () => Promise<void>;
   setRoomLock: (isLocked: boolean) => Promise<void>;
   submitPuzzleAnswer: (
@@ -94,6 +95,7 @@ export function useRoom(): UseRoomReturn {
   const joinRoomMutation = useMutation(api.rooms.joinRoom);
   const leaveRoomMutation = useMutation(api.rooms.leaveRoom);
   const startGameMutation = useMutation(api.game.startGame);
+  const startGameWithLocationsMutation = useMutation(api.game.startGameWithLocations);
   const submitAnswerMutation = useMutation(api.game.submitPuzzleAnswer);
   const updateInputMutation = useMutation(api.game.updateSharedInput);
   const sendMessageMutation = useMutation(api.game.sendChatMessage);
@@ -334,6 +336,21 @@ export function useRoom(): UseRoomReturn {
     }
   }, [roomId, identifier, startGameMutation]);
 
+  const startGameWithLocations = useCallback(async () => {
+    if (!roomId) return;
+
+    try {
+      await startGameWithLocationsMutation({
+        roomId,
+        odentifier: identifier,
+      });
+    } catch (error) {
+      setConnectionError(
+        error instanceof Error ? error.message : "Failed to start game"
+      );
+    }
+  }, [roomId, identifier, startGameWithLocationsMutation]);
+
   const submitPuzzleAnswer = useCallback(
     async (puzzleIndex: number, answer: string) => {
       if (!roomId) return { correct: false };
@@ -565,6 +582,7 @@ export function useRoom(): UseRoomReturn {
     leaveRoom,
     clearError,
     startGame,
+    startGameWithLocations,
     endGame,
     setRoomLock,
     submitPuzzleAnswer,

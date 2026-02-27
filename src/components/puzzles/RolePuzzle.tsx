@@ -252,12 +252,30 @@ export function RolePuzzle({ puzzleIndex }: RolePuzzleProps) {
             {/* Team Roles Display */}
             <div className="flex flex-wrap gap-2 pt-2 border-t border-white/10">
               <span className="text-xs text-white/50 w-full mb-1">Investigation Team:</span>
-              <Badge
-                variant="outline"
-                className={`text-xs ${ROLE_COLORS[currentPlayerRole]}`}
-              >
-                You: {ROLE_LABELS[currentPlayerRole]}
-              </Badge>
+              {/* Current player's roles - show both if fieldAgent has decoder access (2-player mode) */}
+              {currentPlayerRole === 'fieldAgent' && puzzleData.decoderData ? (
+                <div className="flex items-center gap-1">
+                  <Badge
+                    variant="outline"
+                    className={`text-xs ${ROLE_COLORS.fieldAgent}`}
+                  >
+                    You: {ROLE_LABELS.fieldAgent}
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className={`text-xs ${ROLE_COLORS.decoder}`}
+                  >
+                    + {ROLE_LABELS.decoder}
+                  </Badge>
+                </div>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className={`text-xs ${ROLE_COLORS[currentPlayerRole]}`}
+                >
+                  You: {ROLE_LABELS[currentPlayerRole]}
+                </Badge>
+              )}
               {teammates.map(teammate => (
                 <Badge
                   key={teammate.id}
@@ -278,15 +296,33 @@ export function RolePuzzle({ puzzleIndex }: RolePuzzleProps) {
           {/* Role Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <RoleIcon className="w-5 h-5" />
+              <RoleIcon className={`w-5 h-5 ${currentPlayerRole === 'analyst' ? 'text-blue-400' : currentPlayerRole === 'decoder' ? 'text-purple-400' : 'text-green-400'}`} />
               <span className="font-medium text-white">{puzzleData.title}</span>
             </div>
-            <Badge
-              variant="outline"
-              className={`font-medium text-xs ${ROLE_COLORS[currentPlayerRole]}`}
-            >
-              {ROLE_LABELS[currentPlayerRole]}
-            </Badge>
+            {/* Show multiple role badges in 2-player mode */}
+            {currentPlayerRole === 'fieldAgent' && puzzleData.decoderData ? (
+              <div className="flex items-center gap-1">
+                <Badge
+                  variant="outline"
+                  className={`font-medium text-xs ${ROLE_COLORS.fieldAgent}`}
+                >
+                  {ROLE_LABELS.fieldAgent}
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className={`font-medium text-xs ${ROLE_COLORS.decoder}`}
+                >
+                  {ROLE_LABELS.decoder}
+                </Badge>
+              </div>
+            ) : (
+              <Badge
+                variant="outline"
+                className={`font-medium text-xs ${ROLE_COLORS[currentPlayerRole]}`}
+              >
+                {ROLE_LABELS[currentPlayerRole]}
+              </Badge>
+            )}
           </div>
 
           {/* Role Description */}

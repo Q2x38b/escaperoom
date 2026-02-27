@@ -24,6 +24,8 @@ export default defineSchema({
     })),
     isLocked: v.optional(v.boolean()),
     createdAt: v.number(),
+    // Split locations mode - each player has their own location and puzzles
+    useLocations: v.optional(v.boolean()),
   })
     .index("by_code", ["code"])
     .index("by_createdAt", ["createdAt"]),
@@ -42,6 +44,12 @@ export default defineSchema({
       v.literal("decoder"),
       v.literal("fieldAgent")
     )),
+    // Location assignment for split mode
+    location: v.optional(v.string()),
+    // Individual puzzle progress for location mode (0-2 puzzles per location)
+    locationPuzzleProgress: v.optional(v.number()),
+    // Solved puzzles at this location
+    locationSolvedPuzzles: v.optional(v.array(v.number())),
   })
     .index("by_room", ["roomId"])
     .index("by_identifier", ["odentifier"])

@@ -4,16 +4,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
-import { Users, Copy, Check, Play, Crown, Loader2, X, DoorClosed } from 'lucide-react';
+import { Users, Copy, Check, Play, Crown, Loader2, X, DoorClosed, MapPin, UserCheck } from 'lucide-react';
 import { useState } from 'react';
+
+type GameMode = 'classic' | 'locations';
 
 export function WaitingRoom() {
   const { roomId, players, isHost, playerId } = useGameStore();
-  const { startGame, roomCode, kickPlayer, closeRoom } = useRoom();
+  const { startGame, startGameWithLocations, roomCode, kickPlayer, closeRoom } = useRoom();
   const [copied, setCopied] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [kickingPlayer, setKickingPlayer] = useState<string | null>(null);
+  const [gameMode, setGameMode] = useState<GameMode>('classic');
 
   const canStart = players.length >= 2;
   const displayCode = roomCode || roomId;
@@ -38,7 +41,11 @@ export function WaitingRoom() {
 
   const handleStartGame = async () => {
     setIsStarting(true);
-    await startGame();
+    if (gameMode === 'locations') {
+      await startGameWithLocations();
+    } else {
+      await startGame();
+    }
   };
 
   return (
@@ -86,7 +93,7 @@ export function WaitingRoom() {
                 </span>
                 <Badge variant={canStart ? 'success' : 'warning'} className="tabular-nums">
                   <Users className="w-3 h-3 mr-1" aria-hidden="true" />
-                  <span aria-label={`${players.length} of 4 players`}>{players.length}/4</span>
+                  <span aria-label={`${players.length} of 6 players`}>{players.length}/6</span>
                 </Badge>
               </div>
 
@@ -131,23 +138,63 @@ export function WaitingRoom() {
                   </div>
                 ))}
 
-                {/* Empty slots */}
-                {Array.from({ length: 4 - players.length }).map((_, i) => (
-                  <div
-                    key={`empty-${i}`}
-                    className="flex items-center justify-center bg-white/5 border border-dashed border-white/30 rounded-lg px-4 py-3 text-white/60"
-                  >
-                    <span className="text-sm">Waiting for investigator...</span>
+                {/* Empty slots - show up to 6 */}
+                {players.length < 6 && (
+                  <div className="flex items-center justify-center bg-white/5 border border-dashed border-white/30 rounded-lg px-4 py-3 text-white/60">
+                    <span className="text-sm">+ {6 - players.length} more can join...</span>
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
             <Separator />
 
-            {/* Start Game Button */}
+            {/* Game Mode Selection & Start */}
             {isHost ? (
               <div className="space-y-3">
+                {/* Game Mode Selector */}
+                <div className="space-y-2">
+                  <span className="text-xs text-white/60 font-medium">Game Mode</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setGameMode('classic')}
+                      className={`p-3 rounded-lg border transition-all text-left ${
+                        gameMode === 'classic'
+                          ? 'border-white/50 bg-white/10'
+                          : 'border-white/20 bg-white/5 hover:bg-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <UserCheck className={`w-4 h-4 ${gameMode === 'classic' ? 'text-green-400' : 'text-white/60'}`} />
+                        <span className={`text-sm font-medium ${gameMode === 'classic' ? 'text-white' : 'text-white/80'}`}>
+                          Classic
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-white/60">
+                        Team roles, shared puzzles
+                      </p>
+                    </button>
+                    <button
+                      onClick={() => setGameMode('locations')}
+                      className={`p-3 rounded-lg border transition-all text-left ${
+                        gameMode === 'locations'
+                          ? 'border-amber-500/50 bg-amber-500/10'
+                          : 'border-white/20 bg-white/5 hover:bg-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <MapPin className={`w-4 h-4 ${gameMode === 'locations' ? 'text-amber-400' : 'text-white/60'}`} />
+                        <span className={`text-sm font-medium ${gameMode === 'locations' ? 'text-white' : 'text-white/80'}`}>
+                          Split Ops
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-white/60">
+                        Each player, own location
+                      </p>
+                    </button>
+                  </div>
+                </div>
+
                 <Button
                   onClick={handleStartGame}
                   disabled={!canStart || isStarting}
@@ -162,7 +209,7 @@ export function WaitingRoom() {
                   ) : (
                     <>
                       <Play className="w-4 h-4 mr-2" aria-hidden="true" />
-                      Begin Investigation
+                      Begin {gameMode === 'locations' ? 'Split Operations' : 'Investigation'}
                     </>
                   )}
                 </Button>

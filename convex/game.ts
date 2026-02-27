@@ -110,6 +110,7 @@ export const startGame = mutation({
       startTime: Date.now(),
       currentPuzzle: 0,
       solvedPuzzles: [],
+      isLocked: true, // Auto-lock room when game starts (host can unlock for mid-game joins)
     });
 
     return { success: true };
@@ -565,5 +566,472 @@ export const deleteRoom = mutation({
     await ctx.db.delete(args.roomId);
 
     return { success: true };
+  },
+});
+
+// ============================================
+// LOCATION-BASED SPLIT PUZZLE SYSTEM
+// ============================================
+
+// Location definitions - each location has 2 puzzles
+const LOCATIONS: Record<string, {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  puzzles: Array<{
+    title: string;
+    objective: string;
+    context: string;
+    data: string[];
+    hint: string;
+    answer: string;
+  }>;
+}> = {
+  bank: {
+    id: "bank",
+    name: "Meridian Bank HQ",
+    description: "The main branch where Viktor Volkov manages offshore transfers",
+    icon: "🏦",
+    puzzles: [
+      {
+        title: "Account Access Terminal",
+        objective: "Decode the account holder's name from the encrypted database entry",
+        context: "You've accessed a terminal showing encrypted account records. Decode the hex data.",
+        data: [
+          "━━━ ACCOUNT RECORD ━━━",
+          "Account Type: Private Wealth",
+          "Status: ACTIVE",
+          "━━━ ENCODED HOLDER ━━━",
+          "56 41 4E 43 45",
+          "━━━ HEX REFERENCE ━━━",
+          "41=A 43=C 45=E 4E=N 56=V",
+        ],
+        hint: "Convert each hex pair to a letter",
+        answer: "VANCE",
+      },
+      {
+        title: "Wire Transfer Log",
+        objective: "Decode the transfer destination",
+        context: "The most recent wire transfer shows an encoded destination.",
+        data: [
+          "━━━ TRANSFER #7829 ━━━",
+          "Amount: $50,000.00",
+          "Date: 2024-03-15",
+          "━━━ DESTINATION CODE ━━━",
+          "Q0FZTUFOIA==",
+          "━━━ BASE64 TIP ━━━",
+          "Use atob() or an online decoder",
+        ],
+        hint: "This is Base64 encoded",
+        answer: "CAYMAN",
+      },
+    ],
+  },
+  hotel: {
+    id: "hotel",
+    name: "Grand Pacific Hotel",
+    description: "Viktor's laptop was left in his suite - Room 1847",
+    icon: "🏨",
+    puzzles: [
+      {
+        title: "Laptop Login",
+        objective: "Decode the password hint to access the laptop",
+        context: "The laptop shows a password hint in binary format.",
+        data: [
+          "━━━ PASSWORD HINT ━━━",
+          "01010000 01000001 01010011 01010011",
+          "━━━ BINARY CHART ━━━",
+          "01000001=A 01010000=P",
+          "01010011=S 01010100=T",
+        ],
+        hint: "Each 8-bit sequence is one letter",
+        answer: "PASS",
+      },
+      {
+        title: "Encrypted Email",
+        objective: "Decode the secret meeting location from the email",
+        context: "An unsent email draft contains encoded coordinates.",
+        data: [
+          "━━━ DRAFT EMAIL ━━━",
+          "To: [REDACTED]",
+          "Subject: Meeting Location",
+          "━━━ ENCODED LOCATION ━━━",
+          "44 4F 43 4B 53",
+          "━━━ HEX REFERENCE ━━━",
+          "43=C 44=D 4B=K 4F=O 53=S",
+        ],
+        hint: "Convert hex pairs to ASCII letters",
+        answer: "DOCKS",
+      },
+    ],
+  },
+  warehouse: {
+    id: "warehouse",
+    name: "Harbor Warehouse 7",
+    description: "Shipping records suggest suspicious cargo movements here",
+    icon: "🏭",
+    puzzles: [
+      {
+        title: "Shipping Manifest",
+        objective: "Decode the cargo contents from the encoded manifest",
+        context: "A locked shipping container has a coded manifest.",
+        data: [
+          "━━━ CONTAINER #4417 ━━━",
+          "Origin: UNKNOWN",
+          "━━━ CONTENTS CODE ━━━",
+          "R09MRA==",
+          "━━━ DECODE TIP ━━━",
+          "Base64 encoded string",
+        ],
+        hint: "Base64 decodes to a precious metal",
+        answer: "GOLD",
+      },
+      {
+        title: "Security Log",
+        objective: "Find who accessed the warehouse last night",
+        context: "The security system logged an encoded visitor ID.",
+        data: [
+          "━━━ ACCESS LOG ━━━",
+          "Time: 02:34 AM",
+          "━━━ VISITOR ID ━━━",
+          "01001101 01000001 01010010 01001011",
+          "━━━ BINARY CHART ━━━",
+          "01000001=A 01001011=K",
+          "01001101=M 01010010=R",
+        ],
+        hint: "Convert binary to letters",
+        answer: "MARK",
+      },
+    ],
+  },
+  office: {
+    id: "office",
+    name: "Vance Foundation Office",
+    description: "The charity's headquarters - where the money trail leads",
+    icon: "🏢",
+    puzzles: [
+      {
+        title: "Donation Records",
+        objective: "Decode the hidden donor name",
+        context: "Suspicious donation records show an encoded major donor.",
+        data: [
+          "━━━ DONATION #1001 ━━━",
+          "Amount: $100,000",
+          "━━━ DONOR CODE ━━━",
+          "534D495448",
+          "━━━ HEX TO TEXT ━━━",
+          "48=H 49=I 4D=M 53=S 54=T",
+        ],
+        hint: "Each pair is a hex code for a letter",
+        answer: "SMITH",
+      },
+      {
+        title: "Secret Fund",
+        objective: "Decode the fund's purpose",
+        context: "A hidden Excel file contains an encoded fund name.",
+        data: [
+          "━━━ FUND DETAILS ━━━",
+          "Status: HIDDEN",
+          "━━━ FUND NAME ━━━",
+          "QUlSQ1JBRlQ=",
+          "━━━ DECODE TIP ━━━",
+          "Base64 encoded - use atob()",
+        ],
+        hint: "Decodes to a type of vehicle",
+        answer: "AIRCRAFT",
+      },
+    ],
+  },
+  marina: {
+    id: "marina",
+    name: "Sunset Marina",
+    description: "A luxury yacht registered to a shell company is docked here",
+    icon: "⛵",
+    puzzles: [
+      {
+        title: "Yacht Registration",
+        objective: "Decode the yacht's hidden name",
+        context: "The registration papers show an encoded vessel name.",
+        data: [
+          "━━━ VESSEL REG ━━━",
+          "Type: Motor Yacht",
+          "━━━ NAME CODE ━━━",
+          "574156 45",
+          "━━━ HEX REFERENCE ━━━",
+          "45=E 56=V 57=W 41=A",
+        ],
+        hint: "Remove the space, convert hex pairs",
+        answer: "WAVE",
+      },
+      {
+        title: "Captain's Log",
+        objective: "Decode the next destination",
+        context: "The captain's digital log shows an encoded port.",
+        data: [
+          "━━━ LOG ENTRY ━━━",
+          "Date: Next Thursday",
+          "━━━ DESTINATION ━━━",
+          "01000011 01010101 01000010 01000001",
+          "━━━ BINARY TO ASCII ━━━",
+          "01000001=A 01000010=B",
+          "01000011=C 01010101=U",
+        ],
+        hint: "Each 8-bit block is one letter",
+        answer: "CUBA",
+      },
+    ],
+  },
+  airport: {
+    id: "airport",
+    name: "Regional Airfield",
+    description: "Private planes have been making unscheduled flights",
+    icon: "✈️",
+    puzzles: [
+      {
+        title: "Flight Plan",
+        objective: "Decode the flight's cargo type",
+        context: "A suspicious flight plan has encoded cargo information.",
+        data: [
+          "━━━ FLIGHT #N738VN ━━━",
+          "Type: Private Charter",
+          "━━━ CARGO CODE ━━━",
+          "Q0FTSQ==",
+          "━━━ BASE64 TIP ━━━",
+          "Decode using atob()",
+        ],
+        hint: "Decodes to something valuable",
+        answer: "CASH",
+      },
+      {
+        title: "Pilot ID",
+        objective: "Decode the pilot's codename",
+        context: "The pilot uses an encoded callsign.",
+        data: [
+          "━━━ PILOT FILE ━━━",
+          "License: Commercial",
+          "━━━ CALLSIGN ━━━",
+          "48 41 57 4B",
+          "━━━ HEX CHART ━━━",
+          "41=A 48=H 4B=K 57=W",
+        ],
+        hint: "Convert hex to letters",
+        answer: "HAWK",
+      },
+    ],
+  },
+};
+
+// Get available locations
+const LOCATION_IDS = Object.keys(LOCATIONS);
+
+// Assign locations to players when starting game in location mode
+export const startGameWithLocations = mutation({
+  args: {
+    roomId: v.id("rooms"),
+    odentifier: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const room = await ctx.db.get(args.roomId);
+    if (!room) throw new Error("Room not found");
+
+    if (room.hostId !== args.odentifier) {
+      throw new Error("Only the host can start the game");
+    }
+
+    const players = await ctx.db
+      .query("players")
+      .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+      .collect();
+
+    if (players.length < 2) {
+      throw new Error("Need at least 2 players to start");
+    }
+
+    // Shuffle locations and assign to players
+    const shuffledLocations = [...LOCATION_IDS].sort(() => Math.random() - 0.5);
+
+    for (let i = 0; i < players.length; i++) {
+      const locationId = shuffledLocations[i % shuffledLocations.length];
+      await ctx.db.patch(players[i]._id, {
+        location: locationId,
+        locationPuzzleProgress: 0,
+        locationSolvedPuzzles: [],
+      });
+    }
+
+    await ctx.db.patch(args.roomId, {
+      phase: "playing",
+      startTime: Date.now(),
+      currentPuzzle: 0,
+      solvedPuzzles: [],
+      isLocked: true,
+      useLocations: true,
+    });
+
+    return { success: true };
+  },
+});
+
+// Get location puzzle data for a player
+export const getLocationPuzzleData = query({
+  args: {
+    roomId: v.id("rooms"),
+    odentifier: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const room = await ctx.db.get(args.roomId);
+    if (!room || !room.useLocations) return null;
+
+    const player = await ctx.db
+      .query("players")
+      .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+      .filter((q) => q.eq(q.field("odentifier"), args.odentifier))
+      .first();
+
+    if (!player || !player.location) return null;
+
+    const location = LOCATIONS[player.location];
+    if (!location) return null;
+
+    const puzzleIndex = player.locationPuzzleProgress || 0;
+    const puzzle = location.puzzles[puzzleIndex];
+    const isComplete = puzzleIndex >= location.puzzles.length;
+
+    return {
+      location: {
+        id: location.id,
+        name: location.name,
+        description: location.description,
+        icon: location.icon,
+      },
+      puzzle: isComplete ? null : {
+        index: puzzleIndex,
+        title: puzzle.title,
+        objective: puzzle.objective,
+        context: puzzle.context,
+        data: puzzle.data,
+        hint: puzzle.hint,
+      },
+      progress: {
+        current: puzzleIndex,
+        total: location.puzzles.length,
+        isComplete,
+        solvedPuzzles: player.locationSolvedPuzzles || [],
+      },
+    };
+  },
+});
+
+// Submit answer for location puzzle
+export const submitLocationAnswer = mutation({
+  args: {
+    roomId: v.id("rooms"),
+    odentifier: v.string(),
+    answer: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const room = await ctx.db.get(args.roomId);
+    if (!room || !room.useLocations) throw new Error("Invalid room");
+
+    const player = await ctx.db
+      .query("players")
+      .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+      .filter((q) => q.eq(q.field("odentifier"), args.odentifier))
+      .first();
+
+    if (!player || !player.location) throw new Error("Player not found");
+
+    const location = LOCATIONS[player.location];
+    if (!location) throw new Error("Location not found");
+
+    const puzzleIndex = player.locationPuzzleProgress || 0;
+    if (puzzleIndex >= location.puzzles.length) {
+      return { correct: false, message: "All puzzles completed" };
+    }
+
+    const puzzle = location.puzzles[puzzleIndex];
+    const isCorrect = args.answer.toUpperCase().trim() === puzzle.answer;
+
+    if (isCorrect) {
+      const newSolvedPuzzles = [...(player.locationSolvedPuzzles || []), puzzleIndex];
+      const newProgress = puzzleIndex + 1;
+      const isLocationComplete = newProgress >= location.puzzles.length;
+
+      await ctx.db.patch(player._id, {
+        locationPuzzleProgress: newProgress,
+        locationSolvedPuzzles: newSolvedPuzzles,
+      });
+
+      // Check if all players have completed their locations
+      const allPlayers = await ctx.db
+        .query("players")
+        .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+        .collect();
+
+      const allComplete = allPlayers.every((p) => {
+        const loc = LOCATIONS[p.location || ""];
+        if (!loc) return false;
+        const progress = p.locationPuzzleProgress || 0;
+        return progress >= loc.puzzles.length;
+      });
+
+      if (allComplete) {
+        const completionTime = Date.now() - (room.startTime || Date.now());
+        await ctx.db.patch(args.roomId, {
+          phase: "victory",
+          finalPasscode: FINAL_PASSCODE,
+          completionTime,
+        });
+
+        return {
+          correct: true,
+          isLocationComplete,
+          isGameComplete: true,
+          finalPasscode: FINAL_PASSCODE,
+          completionTime,
+        };
+      }
+
+      return { correct: true, isLocationComplete, isGameComplete: false };
+    }
+
+    return { correct: false };
+  },
+});
+
+// Get all players' location progress (for team overview)
+export const getTeamLocationProgress = query({
+  args: { roomId: v.id("rooms") },
+  handler: async (ctx, args) => {
+    const room = await ctx.db.get(args.roomId);
+    if (!room || !room.useLocations) return null;
+
+    const players = await ctx.db
+      .query("players")
+      .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+      .collect();
+
+    return players.map((player) => {
+      const location = player.location ? LOCATIONS[player.location] : null;
+      const progress = player.locationPuzzleProgress || 0;
+      const total = location?.puzzles.length || 0;
+
+      return {
+        odentifier: player.odentifier,
+        nickname: player.nickname,
+        location: location ? {
+          id: location.id,
+          name: location.name,
+          icon: location.icon,
+        } : null,
+        progress: {
+          current: progress,
+          total,
+          isComplete: progress >= total,
+          percentage: total > 0 ? Math.round((progress / total) * 100) : 0,
+        },
+      };
+    });
   },
 });

@@ -97,12 +97,7 @@ export const joinRoom = mutation({
       return { roomId: room._id, code: room.code };
     }
 
-    // New players can only join if game hasn't started
-    if (room.phase !== "waiting") {
-      throw new Error("Game has already started");
-    }
-
-    // Check if room is locked
+    // Check if room is locked - this is the primary control for new joins
     if (room.isLocked) {
       throw new Error("Room is locked");
     }
@@ -117,6 +112,28 @@ export const joinRoom = mutation({
       throw new Error("Room is full");
     }
 
+    // Determine role for new player (only needed if joining mid-game)
+    let assignedRole: "analyst" | "decoder" | "fieldAgent" | undefined = undefined;
+
+    if (room.phase === "playing") {
+      // Assign a supportive role for mid-game joins
+      // Count existing roles to balance the team
+      const roleCounts = { analyst: 0, decoder: 0, fieldAgent: 0 };
+      for (const p of players) {
+        if (p.role) {
+          roleCounts[p.role]++;
+        }
+      }
+
+      // Assign the role with lowest count (prefer analyst/decoder as they support)
+      // Never assign fieldAgent mid-game as that role has submit powers
+      if (roleCounts.analyst <= roleCounts.decoder) {
+        assignedRole = "analyst";
+      } else {
+        assignedRole = "decoder";
+      }
+    }
+
     // Add player
     await ctx.db.insert("players", {
       roomId: room._id,
@@ -126,6 +143,7 @@ export const joinRoom = mutation({
       isReady: true,
       joinedAt: now,
       lastSeen: now,
+      role: assignedRole,
     });
 
     return { roomId: room._id, code: room.code };

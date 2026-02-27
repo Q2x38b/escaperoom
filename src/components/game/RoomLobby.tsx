@@ -125,7 +125,7 @@ export function RoomLobby() {
             {/* Join Room */}
             <form onSubmit={(e) => { e.preventDefault(); handleJoinRoom(); }} className="space-y-3">
               <label htmlFor="roomCode" className="text-sm font-medium text-white cursor-pointer">
-                Room Code
+                Join With Room Code
               </label>
               <div className="flex gap-2">
                 <Input
