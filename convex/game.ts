@@ -64,6 +64,46 @@ export const clearTypingStatus = mutation({
   },
 });
 
+// Set chat typing status (for typing indicator in team chat)
+export const setChatTypingStatus = mutation({
+  args: {
+    roomId: v.id("rooms"),
+    odentifier: v.string(),
+    nickname: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const room = await ctx.db.get(args.roomId);
+    if (!room) throw new Error("Room not found");
+
+    await ctx.db.patch(args.roomId, {
+      chatTypingPlayer: {
+        odentifier: args.odentifier,
+        nickname: args.nickname,
+        timestamp: Date.now(),
+      },
+    });
+  },
+});
+
+// Clear chat typing status
+export const clearChatTypingStatus = mutation({
+  args: {
+    roomId: v.id("rooms"),
+    odentifier: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const room = await ctx.db.get(args.roomId);
+    if (!room) throw new Error("Room not found");
+
+    // Only clear if the current player is the one typing
+    if (room.chatTypingPlayer?.odentifier === args.odentifier) {
+      await ctx.db.patch(args.roomId, {
+        chatTypingPlayer: undefined,
+      });
+    }
+  },
+});
+
 // Update shared input (for collaborative puzzle solving)
 export const updateSharedInput = mutation({
   args: {

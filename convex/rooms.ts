@@ -90,10 +90,35 @@ export const joinRoom = mutation({
 
     if (existingPlayer) {
       // Update nickname and lastSeen if rejoining
-      await ctx.db.patch(existingPlayer._id, {
+      const updates: { nickname: string; lastSeen: number; location?: string; locationPuzzleProgress?: number; locationSolvedPuzzles?: number[] } = {
         nickname: args.nickname,
         lastSeen: now,
-      });
+      };
+
+      // If game is in progress with locations and player doesn't have a location, assign one
+      if (room.useLocations && room.phase === "playing" && !existingPlayer.location) {
+        // Get all players to find which locations are taken
+        const allPlayers = await ctx.db
+          .query("players")
+          .withIndex("by_room", (q) => q.eq("roomId", room._id))
+          .collect();
+
+        const usedLocations = new Set(allPlayers.map(p => p.location).filter(Boolean));
+        const allLocations = ["bank", "hotel", "warehouse", "office", "marina", "airport"];
+
+        // Find an available location or pick one randomly if all are used
+        let availableLocation = allLocations.find(loc => !usedLocations.has(loc));
+        if (!availableLocation) {
+          // All locations taken, pick a random one
+          availableLocation = allLocations[Math.floor(Math.random() * allLocations.length)];
+        }
+
+        updates.location = availableLocation;
+        updates.locationPuzzleProgress = 0;
+        updates.locationSolvedPuzzles = [];
+      }
+
+      await ctx.db.patch(existingPlayer._id, updates);
       return { roomId: room._id, code: room.code };
     }
 

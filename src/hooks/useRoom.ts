@@ -22,6 +22,12 @@ export interface TypingPlayer {
   timestamp: number;
 }
 
+export interface ChatTypingPlayer {
+  odentifier: string;
+  nickname: string;
+  timestamp: number;
+}
+
 export interface UseRoomReturn {
   isConnected: boolean;
   isConnecting: boolean;
@@ -31,6 +37,7 @@ export interface UseRoomReturn {
   roomId: Id<"rooms"> | null;
   isLocked: boolean;
   typingPlayer: TypingPlayer | null;
+  chatTypingPlayer: ChatTypingPlayer | null;
   currentPlayerId: string;
   createRoom: (nickname: string) => Promise<void>;
   joinRoom: (roomCode: string, nickname: string) => Promise<void>;
@@ -43,6 +50,8 @@ export interface UseRoomReturn {
   claimTyping: (puzzleIndex: number) => Promise<boolean>;
   releaseTyping: () => void;
   sendChatMessage: (message: string) => void;
+  setChatTyping: () => void;
+  clearChatTyping: () => void;
   validateEntry: (passcode: string) => Promise<boolean>;
   deleteRoomData: () => Promise<void>;
   kickPlayer: (targetIdentifier: string) => Promise<{ success: boolean; kickedPlayer?: string }>;
@@ -91,6 +100,8 @@ export function useRoom(): UseRoomReturn {
   const closeRoomMutation = useMutation(api.rooms.closeRoom);
   const setRoomLockMutation = useMutation(api.rooms.setRoomLock);
   const endGameMutation = useMutation(api.rooms.endGame);
+  const setChatTypingMutation = useMutation(api.game.setChatTypingStatus);
+  const clearChatTypingMutation = useMutation(api.game.clearChatTypingStatus);
 
   // Convex queries (reactive)
   const roomData = useQuery(
@@ -489,8 +500,36 @@ export function useRoom(): UseRoomReturn {
     }
   }, [roomId, identifier, setRoomLockMutation]);
 
+  const setChatTyping = useCallback(() => {
+    if (!roomId) return;
+
+    const playerName =
+      useGameStore.getState().players.find((p) => p.id === identifier)
+        ?.nickname || "Unknown";
+
+    setChatTypingMutation({
+      roomId,
+      odentifier: identifier,
+      nickname: playerName,
+    }).catch((error) => {
+      console.error("Failed to set chat typing:", error);
+    });
+  }, [roomId, identifier, setChatTypingMutation]);
+
+  const clearChatTyping = useCallback(() => {
+    if (!roomId) return;
+
+    clearChatTypingMutation({
+      roomId,
+      odentifier: identifier,
+    }).catch((error) => {
+      console.error("Failed to clear chat typing:", error);
+    });
+  }, [roomId, identifier, clearChatTypingMutation]);
+
   // Get typing player from room data
   const typingPlayer = roomData?.typingPlayer || null;
+  const chatTypingPlayer = roomData?.chatTypingPlayer || null;
   const isLocked = roomData?.isLocked || false;
 
   return {
@@ -502,6 +541,7 @@ export function useRoom(): UseRoomReturn {
     roomId,
     isLocked,
     typingPlayer,
+    chatTypingPlayer,
     currentPlayerId: identifier,
     createRoom,
     joinRoom,
@@ -514,6 +554,8 @@ export function useRoom(): UseRoomReturn {
     claimTyping,
     releaseTyping,
     sendChatMessage,
+    setChatTyping,
+    clearChatTyping,
     validateEntry,
     deleteRoomData,
     kickPlayer,

@@ -16,14 +16,20 @@ export function ChatPanel({ isOpen, onClose, onUnreadCountChange }: ChatPanelPro
   const [message, setMessage] = useState('');
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
-  const dragOffset = useRef({ x: 0, y: 0 });
+  const dragStart = useRef({ mouseX: 0, mouseY: 0, posX: 0, posY: 0 });
   const panelRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastReadCountRef = useRef(0);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { sendChatMessage, currentPlayerId } = useRoom();
+  const { sendChatMessage, currentPlayerId, chatTypingPlayer, setChatTyping, clearChatTyping } = useRoom();
   const chatMessages = useGameStore((state) => state.chatMessages);
   const players = useGameStore((state) => state.players);
+
+  // Check if typing indicator is still valid (within 3 seconds)
+  const isTypingValid = chatTypingPlayer &&
+    chatTypingPlayer.odentifier !== currentPlayerId &&
+    Date.now() - chatTypingPlayer.timestamp < 3000;
 
   // Get player color based on index
   const getPlayerColor = (playerId: string) => {
@@ -46,38 +52,37 @@ export function ChatPanel({ isOpen, onClose, onUnreadCountChange }: ChatPanelPro
     }
   }, [chatMessages, isOpen, onUnreadCountChange]);
 
-  // Drag handlers
+  // Drag handlers - simple delta-based approach
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (panelRef.current) {
-      const rect = panelRef.current.getBoundingClientRect();
-      dragOffset.current = {
-        x: e.clientX - rect.left - position.x,
-        y: e.clientY - rect.top - position.y,
-      };
-      setIsDragging(true);
-    }
+    e.preventDefault();
+    dragStart.current = {
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      posX: position.x,
+      posY: position.y,
+    };
+    setIsDragging(true);
   }, [position]);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (isDragging && panelRef.current) {
-      const parent = panelRef.current.parentElement;
-      if (!parent) return;
+    if (!isDragging) return;
 
-      const parentRect = parent.getBoundingClientRect();
-      const panelRect = panelRef.current.getBoundingClientRect();
+    const deltaX = e.clientX - dragStart.current.mouseX;
+    const deltaY = e.clientY - dragStart.current.mouseY;
 
-      let newX = e.clientX - parentRect.right + panelRect.width - dragOffset.current.x;
-      let newY = e.clientY - parentRect.top - dragOffset.current.y;
+    const newX = dragStart.current.posX + deltaX;
+    const newY = dragStart.current.posY + deltaY;
 
-      // Constrain to viewport
-      const maxX = window.innerWidth - 100;
-      const maxY = window.innerHeight - 100;
+    // Constrain to viewport
+    const maxX = window.innerWidth - 100;
+    const maxY = window.innerHeight - 100;
+    const minX = -(window.innerWidth - 100);
+    const minY = -50;
 
-      newX = Math.max(-parentRect.right + 100, Math.min(maxX - panelRect.width, newX));
-      newY = Math.max(-parentRect.top + 16, Math.min(maxY, newY));
-
-      setPosition({ x: newX, y: newY });
-    }
+    setPosition({
+      x: Math.max(minX, Math.min(maxX, newX)),
+      y: Math.max(minY, Math.min(maxY, newY)),
+    });
   }, [isDragging]);
 
   const handleMouseUp = useCallback(() => {
@@ -97,37 +102,39 @@ export function ChatPanel({ isOpen, onClose, onUnreadCountChange }: ChatPanelPro
 
   // Touch handlers for mobile
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (panelRef.current && e.touches.length === 1) {
+    if (e.touches.length === 1) {
       const touch = e.touches[0];
-      const rect = panelRef.current.getBoundingClientRect();
-      dragOffset.current = {
-        x: touch.clientX - rect.left - position.x,
-        y: touch.clientY - rect.top - position.y,
+      dragStart.current = {
+        mouseX: touch.clientX,
+        mouseY: touch.clientY,
+        posX: position.x,
+        posY: position.y,
       };
       setIsDragging(true);
     }
   }, [position]);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
-    if (isDragging && panelRef.current && e.touches.length === 1) {
-      const touch = e.touches[0];
-      const parent = panelRef.current.parentElement;
-      if (!parent) return;
+    if (!isDragging || e.touches.length !== 1) return;
+    e.preventDefault();
 
-      const parentRect = parent.getBoundingClientRect();
-      const panelRect = panelRef.current.getBoundingClientRect();
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - dragStart.current.mouseX;
+    const deltaY = touch.clientY - dragStart.current.mouseY;
 
-      let newX = touch.clientX - parentRect.right + panelRect.width - dragOffset.current.x;
-      let newY = touch.clientY - parentRect.top - dragOffset.current.y;
+    const newX = dragStart.current.posX + deltaX;
+    const newY = dragStart.current.posY + deltaY;
 
-      const maxX = window.innerWidth - 100;
-      const maxY = window.innerHeight - 100;
+    // Constrain to viewport
+    const maxX = window.innerWidth - 100;
+    const maxY = window.innerHeight - 100;
+    const minX = -(window.innerWidth - 100);
+    const minY = -50;
 
-      newX = Math.max(-parentRect.right + 100, Math.min(maxX - panelRect.width, newX));
-      newY = Math.max(-parentRect.top + 16, Math.min(maxY, newY));
-
-      setPosition({ x: newX, y: newY });
-    }
+    setPosition({
+      x: Math.max(minX, Math.min(maxX, newX)),
+      y: Math.max(minY, Math.min(maxY, newY)),
+    });
   }, [isDragging]);
 
   const handleTouchEnd = useCallback(() => {
@@ -149,14 +156,52 @@ export function ChatPanel({ isOpen, onClose, onUnreadCountChange }: ChatPanelPro
     if (message.trim()) {
       sendChatMessage(message.trim());
       setMessage('');
+      // Clear typing status when message is sent
+      clearChatTyping();
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
     }
   };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setMessage(newValue);
+
+    // Set typing status
+    if (newValue.trim()) {
+      setChatTyping();
+      // Clear typing status after 2 seconds of inactivity
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      typingTimeoutRef.current = setTimeout(() => {
+        clearChatTyping();
+      }, 2000);
+    } else {
+      clearChatTyping();
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+    }
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div
       ref={panelRef}
       style={{
-        transform: `translate(${-position.x}px, ${position.y}px)`,
+        transform: `translate(${position.x}px, ${position.y}px)`,
       }}
       className={`fixed top-16 right-4 sm:top-20 sm:right-6 z-40 w-[calc(100vw-2rem)] sm:w-80 max-w-80 transition-opacity duration-300 ${
         isDragging ? '' : 'transition-transform'
@@ -238,6 +283,23 @@ export function ChatPanel({ isOpen, onClose, onUnreadCountChange }: ChatPanelPro
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Typing indicator */}
+        {isTypingValid && (
+          <div className="px-3 py-1.5 border-t border-white/10 bg-white/5">
+            <div className="flex items-center gap-2 text-xs text-white/60">
+              <span className={getPlayerColor(chatTypingPlayer.odentifier)}>
+                {chatTypingPlayer.nickname}
+              </span>
+              <span>is typing</span>
+              <span className="flex gap-0.5">
+                <span className="w-1 h-1 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-1 h-1 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1 h-1 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Input */}
         <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="p-3 border-t border-white/20">
           <div className="flex gap-2">
@@ -245,7 +307,7 @@ export function ChatPanel({ isOpen, onClose, onUnreadCountChange }: ChatPanelPro
             <Input
               id="chat-input"
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              onChange={handleInputChange}
               placeholder="Type a message..."
               className="flex-1 h-9 text-sm bg-white/10 border-white/40 text-white placeholder:text-white/60"
             />

@@ -22,6 +22,12 @@ export default defineSchema({
       puzzleIndex: v.number(),
       timestamp: v.number(),
     })),
+    // Chat typing indicator - who is currently typing in chat
+    chatTypingPlayer: v.optional(v.object({
+      odentifier: v.string(),
+      nickname: v.string(),
+      timestamp: v.number(),
+    })),
     isLocked: v.optional(v.boolean()),
     createdAt: v.number(),
     // Split locations mode - each player has their own location and puzzles
