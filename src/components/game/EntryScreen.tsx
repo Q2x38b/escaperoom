@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useGameStore } from '../../stores/gameStore';
 import { useRoom } from '../../hooks/useRoom';
-import { AlertCircle, Loader2, ArrowRight, X } from 'lucide-react';
+import { AlertCircle, Loader2, X } from 'lucide-react';
 
 export function EntryScreen() {
   const [passcode, setPasscode] = useState('');
@@ -35,7 +35,7 @@ export function EntryScreen() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-sm">
         <form onSubmit={handleSubmit}>
           <div className="relative flex items-center">
             <input
@@ -46,39 +46,29 @@ export function EntryScreen() {
                 setError('');
               }}
               placeholder="Enter access code"
-              className="w-full h-14 pl-5 pr-24 rounded-full bg-white/5 border border-white/20 text-white placeholder:text-white/40 font-mono text-base focus:outline-none focus:border-white/40 focus:bg-white/10 transition-all"
+              className="w-full h-11 pl-4 pr-12 rounded-lg bg-white/[0.03] border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-white/20 transition-colors"
               disabled={isChecking}
               autoFocus
             />
 
-            {/* Clear button */}
-            {passcode && !isChecking && (
-              <button
-                type="button"
-                onClick={handleClear}
-                className="absolute right-16 p-1.5 rounded-full text-white/40 hover:text-white/70 hover:bg-white/10 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-
-            {/* Submit button */}
+            {/* Clear/Submit button */}
             <button
-              type="submit"
-              disabled={!passcode.trim() || isChecking}
-              className="absolute right-2 h-10 w-10 rounded-full bg-white text-black flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/90 transition-all"
+              type={passcode.trim() ? 'submit' : 'button'}
+              onClick={passcode.trim() ? undefined : handleClear}
+              disabled={isChecking}
+              className="absolute right-2 h-7 w-7 rounded-full border border-white/20 flex items-center justify-center text-white/40 hover:text-white/60 hover:border-white/30 disabled:opacity-50 transition-colors"
             >
               {isChecking ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : (
-                <ArrowRight className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               )}
             </button>
           </div>
 
           {error && (
-            <div role="alert" className="flex items-center justify-center gap-2 text-red-400 text-sm mt-4">
-              <AlertCircle className="w-4 h-4" />
+            <div role="alert" className="flex items-center justify-center gap-2 text-red-400 text-xs mt-3">
+              <AlertCircle className="w-3.5 h-3.5" />
               <span>{error}</span>
             </div>
           )}

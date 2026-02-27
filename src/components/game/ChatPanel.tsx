@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRoom } from '../../hooks/useRoom';
 import { useGameStore } from '../../stores/gameStore';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
-import { MessageSquare, Send, X } from 'lucide-react';
+import { MessageSquare, Send, X, GripHorizontal } from 'lucide-react';
 
 interface ChatPanelProps {
   isOpen: boolean;
@@ -14,6 +14,10 @@ interface ChatPanelProps {
 
 export function ChatPanel({ isOpen, onClose, onUnreadCountChange }: ChatPanelProps) {
   const [message, setMessage] = useState('');
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragOffset = useRef({ x: 0, y: 0 });
+  const panelRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastReadCountRef = useRef(0);
 
@@ -42,6 +46,105 @@ export function ChatPanel({ isOpen, onClose, onUnreadCountChange }: ChatPanelPro
     }
   }, [chatMessages, isOpen, onUnreadCountChange]);
 
+  // Drag handlers
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (panelRef.current) {
+      const rect = panelRef.current.getBoundingClientRect();
+      dragOffset.current = {
+        x: e.clientX - rect.left - position.x,
+        y: e.clientY - rect.top - position.y,
+      };
+      setIsDragging(true);
+    }
+  }, [position]);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (isDragging && panelRef.current) {
+      const parent = panelRef.current.parentElement;
+      if (!parent) return;
+
+      const parentRect = parent.getBoundingClientRect();
+      const panelRect = panelRef.current.getBoundingClientRect();
+
+      let newX = e.clientX - parentRect.right + panelRect.width - dragOffset.current.x;
+      let newY = e.clientY - parentRect.top - dragOffset.current.y;
+
+      // Constrain to viewport
+      const maxX = window.innerWidth - 100;
+      const maxY = window.innerHeight - 100;
+
+      newX = Math.max(-parentRect.right + 100, Math.min(maxX - panelRect.width, newX));
+      newY = Math.max(-parentRect.top + 16, Math.min(maxY, newY));
+
+      setPosition({ x: newX, y: newY });
+    }
+  }, [isDragging]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, handleMouseMove, handleMouseUp]);
+
+  // Touch handlers for mobile
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (panelRef.current && e.touches.length === 1) {
+      const touch = e.touches[0];
+      const rect = panelRef.current.getBoundingClientRect();
+      dragOffset.current = {
+        x: touch.clientX - rect.left - position.x,
+        y: touch.clientY - rect.top - position.y,
+      };
+      setIsDragging(true);
+    }
+  }, [position]);
+
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (isDragging && panelRef.current && e.touches.length === 1) {
+      const touch = e.touches[0];
+      const parent = panelRef.current.parentElement;
+      if (!parent) return;
+
+      const parentRect = parent.getBoundingClientRect();
+      const panelRect = panelRef.current.getBoundingClientRect();
+
+      let newX = touch.clientX - parentRect.right + panelRect.width - dragOffset.current.x;
+      let newY = touch.clientY - parentRect.top - dragOffset.current.y;
+
+      const maxX = window.innerWidth - 100;
+      const maxY = window.innerHeight - 100;
+
+      newX = Math.max(-parentRect.right + 100, Math.min(maxX - panelRect.width, newX));
+      newY = Math.max(-parentRect.top + 16, Math.min(maxY, newY));
+
+      setPosition({ x: newX, y: newY });
+    }
+  }, [isDragging]);
+
+  const handleTouchEnd = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('touchmove', handleTouchMove, { passive: false });
+      window.addEventListener('touchend', handleTouchEnd);
+      return () => {
+        window.removeEventListener('touchmove', handleTouchMove);
+        window.removeEventListener('touchend', handleTouchEnd);
+      };
+    }
+  }, [isDragging, handleTouchMove, handleTouchEnd]);
+
   const handleSend = () => {
     if (message.trim()) {
       sendChatMessage(message.trim());
@@ -51,15 +154,30 @@ export function ChatPanel({ isOpen, onClose, onUnreadCountChange }: ChatPanelPro
 
   return (
     <div
-      className={`fixed top-16 right-4 sm:top-20 sm:right-6 z-40 w-[calc(100vw-2rem)] sm:w-80 max-w-80 transition-all duration-300 ${
+      ref={panelRef}
+      style={{
+        transform: `translate(${-position.x}px, ${position.y}px)`,
+      }}
+      className={`fixed top-16 right-4 sm:top-20 sm:right-6 z-40 w-[calc(100vw-2rem)] sm:w-80 max-w-80 transition-opacity duration-300 ${
+        isDragging ? '' : 'transition-transform'
+      } ${
         isOpen
-          ? 'opacity-100 translate-y-0 pointer-events-auto'
-          : 'opacity-0 -translate-y-4 pointer-events-none'
+          ? 'opacity-100 pointer-events-auto'
+          : 'opacity-0 pointer-events-none'
       }`}
     >
       <div className="glass-card rounded-xl overflow-hidden shadow-2xl">
+        {/* Drag Handle */}
+        <div
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
+          className="px-4 py-1.5 border-b border-white/10 flex items-center justify-center cursor-grab active:cursor-grabbing bg-white/5 select-none"
+        >
+          <GripHorizontal className="w-5 h-5 text-white/30" />
+        </div>
+
         {/* Header */}
-        <div className="px-4 py-3 border-b border-white/20 flex items-center justify-between">
+        <div className="px-4 py-2.5 border-b border-white/20 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4 text-white" aria-hidden="true" />
             <span className="font-medium text-sm text-white">Team Chat</span>
