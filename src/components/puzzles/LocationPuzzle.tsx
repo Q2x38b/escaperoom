@@ -9,8 +9,19 @@ import { Badge } from '../ui/badge';
 import { useRoom } from '../../hooks/useRoom';
 import {
   AlertCircle, Send, Loader2, MapPin, CheckCircle2,
-  Lightbulb, FileText, Target, Users
+  FileText, Target, Users, Landmark, Hotel, Warehouse,
+  Building2, Ship, Plane
 } from 'lucide-react';
+
+// Map icon names to Lucide components
+const LOCATION_ICONS: Record<string, React.ElementType> = {
+  landmark: Landmark,
+  hotel: Hotel,
+  warehouse: Warehouse,
+  'building-2': Building2,
+  ship: Ship,
+  plane: Plane,
+};
 
 interface LocationProgress {
   odentifier: string;
@@ -32,7 +43,6 @@ export function LocationPuzzle() {
   const [answer, setAnswer] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showHint, setShowHint] = useState(false);
 
   const { roomId, currentPlayerId } = useRoom();
 
@@ -55,7 +65,6 @@ export function LocationPuzzle() {
   useEffect(() => {
     setAnswer('');
     setError('');
-    setShowHint(false);
   }, [locationData?.progress?.current]);
 
   const handleSubmit = async () => {
@@ -75,11 +84,17 @@ export function LocationPuzzle() {
       } else {
         setAnswer('');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to submit answer');
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Get the icon component for a location
+  const getLocationIcon = (iconName: string) => {
+    const IconComponent = LOCATION_ICONS[iconName];
+    return IconComponent || MapPin;
   };
 
   if (!locationData) {
@@ -94,6 +109,7 @@ export function LocationPuzzle() {
   }
 
   const { location, puzzle, progress } = locationData;
+  const LocationIcon = getLocationIcon(location.icon);
 
   return (
     <div className="space-y-4">
@@ -108,44 +124,47 @@ export function LocationPuzzle() {
               </span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {teamProgress.map((player) => (
-                <div
-                  key={player.odentifier}
-                  className={`p-2 rounded-lg border ${
-                    player.odentifier === currentPlayerId
-                      ? 'border-white/40 bg-white/10'
-                      : 'border-white/10 bg-white/5'
-                  }`}
-                >
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-sm">{player.location?.icon || '📍'}</span>
-                    <span className="text-xs text-white/80 truncate">
-                      {player.nickname}
-                      {player.odentifier === currentPlayerId && (
-                        <span className="text-white/50"> (you)</span>
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full transition-all duration-300 rounded-full ${
-                          player.progress.isComplete
-                            ? 'bg-green-500'
-                            : 'bg-blue-500'
-                        }`}
-                        style={{ width: `${player.progress.percentage}%` }}
-                      />
+              {teamProgress.map((player) => {
+                const PlayerIcon = player.location?.icon ? getLocationIcon(player.location.icon) : MapPin;
+                return (
+                  <div
+                    key={player.odentifier}
+                    className={`p-2 rounded-lg border ${
+                      player.odentifier === currentPlayerId
+                        ? 'border-white/40 bg-white/10'
+                        : 'border-white/10 bg-white/5'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <PlayerIcon className="w-3.5 h-3.5 text-amber-400" />
+                      <span className="text-xs text-white/80 truncate">
+                        {player.nickname}
+                        {player.odentifier === currentPlayerId && (
+                          <span className="text-white/50"> (you)</span>
+                        )}
+                      </span>
                     </div>
-                    <span className="text-[10px] text-white/60 tabular-nums">
-                      {player.progress.current}/{player.progress.total}
-                    </span>
-                    {player.progress.isComplete && (
-                      <CheckCircle2 className="w-3 h-3 text-green-400" />
-                    )}
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full transition-all duration-300 rounded-full ${
+                            player.progress.isComplete
+                              ? 'bg-green-500'
+                              : 'bg-blue-500'
+                          }`}
+                          style={{ width: `${player.progress.percentage}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] text-white/60 tabular-nums">
+                        {player.progress.current}/{player.progress.total}
+                      </span>
+                      {player.progress.isComplete && (
+                        <CheckCircle2 className="w-3 h-3 text-green-400" />
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>
@@ -155,8 +174,8 @@ export function LocationPuzzle() {
       <Card className="bank-card border-amber-500/30">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-2xl">
-              {location.icon}
+            <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
+              <LocationIcon className="w-6 h-6 text-amber-400" />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
@@ -210,38 +229,21 @@ export function LocationPuzzle() {
         <Card className="bank-card">
           <CardContent className="p-4 space-y-4">
             {/* Puzzle Header */}
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <FileText className="w-4 h-4 text-blue-400" />
-                  <span className="text-xs text-blue-400 uppercase tracking-wider">
-                    Puzzle {puzzle.index + 1} of {progress.total}
-                  </span>
-                </div>
-                <h3 className="text-lg font-medium text-white">{puzzle.title}</h3>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <FileText className="w-4 h-4 text-blue-400" />
+                <span className="text-xs text-blue-400 uppercase tracking-wider">
+                  Puzzle {puzzle.index + 1} of {progress.total}
+                </span>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowHint(!showHint)}
-                className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
-              >
-                <Lightbulb className="w-4 h-4 mr-1" />
-                Hint
-              </Button>
+              <h3 className="text-lg font-medium text-white">{puzzle.title}</h3>
             </div>
 
             {/* Objective */}
             <div className="flex gap-2 p-3 rounded-lg bg-blue-500/5 border border-blue-500/20">
               <Target className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-              <div>
-                <span className="text-xs text-blue-400/80 uppercase tracking-wider">Objective:</span>
-                <p className="text-sm text-white mt-0.5">{puzzle.objective}</p>
-              </div>
+              <p className="text-sm text-white">{puzzle.objective}</p>
             </div>
-
-            {/* Context */}
-            <p className="text-sm text-white/70">{puzzle.context}</p>
 
             {/* Puzzle Data */}
             <div className="rounded-xl border border-white/20 bg-white/5 overflow-hidden">
@@ -250,12 +252,12 @@ export function LocationPuzzle() {
                   Intel Data
                 </span>
               </div>
-              <div className="p-3 space-y-1.5">
+              <div className="p-3 space-y-1">
                 {puzzle.data.map((line, idx) => (
                   <div
                     key={idx}
                     className={`font-mono text-sm py-1.5 px-3 rounded ${
-                      line.startsWith('━') ? 'text-white/50 text-xs' : 'text-white bg-white/5'
+                      line === '' ? 'h-2' : 'text-white bg-white/5'
                     }`}
                   >
                     {line}
@@ -263,14 +265,6 @@ export function LocationPuzzle() {
                 ))}
               </div>
             </div>
-
-            {/* Hint */}
-            {showHint && (
-              <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                <Lightbulb className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                <p className="text-sm text-amber-200">{puzzle.hint}</p>
-              </div>
-            )}
 
             {/* Answer Input */}
             <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-3 pt-2 border-t border-white/10">

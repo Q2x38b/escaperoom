@@ -38,12 +38,6 @@ export default defineSchema({
     isReady: v.boolean(),
     joinedAt: v.number(),
     lastSeen: v.number(),
-    // Role for collaborative puzzles: analyst sees data, decoder sees keys, fieldAgent submits
-    role: v.optional(v.union(
-      v.literal("analyst"),
-      v.literal("decoder"),
-      v.literal("fieldAgent")
-    )),
     // Location assignment for split mode
     location: v.optional(v.string()),
     // Individual puzzle progress for location mode (0-2 puzzles per location)

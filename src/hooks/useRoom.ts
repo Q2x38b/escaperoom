@@ -22,15 +22,6 @@ export interface TypingPlayer {
   timestamp: number;
 }
 
-export interface RolePuzzleData {
-  role: 'analyst' | 'decoder' | 'fieldAgent';
-  title: string;
-  description: string;
-  data?: string[];
-  decoderData?: { title: string; data: string[]; description: string };
-  canSubmit: boolean;
-}
-
 export interface UseRoomReturn {
   isConnected: boolean;
   isConnecting: boolean;
@@ -41,19 +32,13 @@ export interface UseRoomReturn {
   isLocked: boolean;
   typingPlayer: TypingPlayer | null;
   currentPlayerId: string;
-  currentPlayerRole: 'analyst' | 'decoder' | 'fieldAgent' | null;
   createRoom: (nickname: string) => Promise<void>;
   joinRoom: (roomCode: string, nickname: string) => Promise<void>;
   leaveRoom: () => Promise<void>;
   clearError: () => void;
-  startGame: () => Promise<void>;
   startGameWithLocations: () => Promise<void>;
   endGame: () => Promise<void>;
   setRoomLock: (isLocked: boolean) => Promise<void>;
-  submitPuzzleAnswer: (
-    puzzleIndex: number,
-    answer: string
-  ) => Promise<{ correct: boolean; finalPasscode?: string; completionTime?: number }>;
   syncInput: (key: string, value: string) => void;
   claimTyping: (puzzleIndex: number) => Promise<boolean>;
   releaseTyping: () => void;
@@ -94,9 +79,7 @@ export function useRoom(): UseRoomReturn {
   const createRoomMutation = useMutation(api.rooms.createRoom);
   const joinRoomMutation = useMutation(api.rooms.joinRoom);
   const leaveRoomMutation = useMutation(api.rooms.leaveRoom);
-  const startGameMutation = useMutation(api.game.startGame);
   const startGameWithLocationsMutation = useMutation(api.game.startGameWithLocations);
-  const submitAnswerMutation = useMutation(api.game.submitPuzzleAnswer);
   const updateInputMutation = useMutation(api.game.updateSharedInput);
   const sendMessageMutation = useMutation(api.game.sendChatMessage);
   const validateEntryMutation = useMutation(api.game.validateEntry);
@@ -175,13 +158,12 @@ export function useRoom(): UseRoomReturn {
   // Sync room data to store
   useEffect(() => {
     if (roomData) {
-      // Update players (including roles)
+      // Update players
       const players = roomData.players.map((p) => ({
         id: p.odentifier,
         nickname: p.nickname,
         isHost: p.isHost,
         isReady: p.isReady,
-        role: p.role as 'analyst' | 'decoder' | 'fieldAgent' | undefined,
       }));
       updatePlayers(players);
 
@@ -321,21 +303,6 @@ export function useRoom(): UseRoomReturn {
     }
   }, [roomId, identifier, leaveRoomMutation, clearSession]);
 
-  const startGame = useCallback(async () => {
-    if (!roomId) return;
-
-    try {
-      await startGameMutation({
-        roomId,
-        odentifier: identifier,
-      });
-    } catch (error) {
-      setConnectionError(
-        error instanceof Error ? error.message : "Failed to start game"
-      );
-    }
-  }, [roomId, identifier, startGameMutation]);
-
   const startGameWithLocations = useCallback(async () => {
     if (!roomId) return;
 
@@ -350,43 +317,6 @@ export function useRoom(): UseRoomReturn {
       );
     }
   }, [roomId, identifier, startGameWithLocationsMutation]);
-
-  const submitPuzzleAnswer = useCallback(
-    async (puzzleIndex: number, answer: string) => {
-      if (!roomId) return { correct: false };
-
-      try {
-        const result = await submitAnswerMutation({
-          roomId,
-          puzzleIndex,
-          answer,
-        });
-
-        // Immediately update local state on correct answer for instant feedback
-        // Other players will sync via the reactive query
-        if (result.correct) {
-          // Update solved puzzles and explicitly advance to next puzzle
-          solvePuzzle(puzzleIndex);
-          // Also explicitly set the current puzzle to ensure immediate advancement
-          setCurrentPuzzle(puzzleIndex + 1);
-
-          // Clear shared inputs for this puzzle so next attempt starts fresh
-          updateSharedInput(`puzzle${puzzleIndex}_answer`, '');
-
-          // If victory, set the victory state immediately
-          if (result.finalPasscode && result.completionTime) {
-            setVictory(result.finalPasscode, result.completionTime);
-          }
-        }
-
-        return result;
-      } catch (error) {
-        console.error("Failed to submit answer:", error);
-        return { correct: false };
-      }
-    },
-    [roomId, submitAnswerMutation, solvePuzzle, setCurrentPuzzle, updateSharedInput, setVictory]
-  );
 
   const syncInput = useCallback(
     (key: string, value: string) => {
@@ -563,9 +493,6 @@ export function useRoom(): UseRoomReturn {
   const typingPlayer = roomData?.typingPlayer || null;
   const isLocked = roomData?.isLocked || false;
 
-  // Get current player's role
-  const currentPlayerRole = roomData?.players.find(p => p.odentifier === identifier)?.role as 'analyst' | 'decoder' | 'fieldAgent' | null || null;
-
   return {
     isConnected: roomId !== null && roomData !== undefined,
     isConnecting,
@@ -576,16 +503,13 @@ export function useRoom(): UseRoomReturn {
     isLocked,
     typingPlayer,
     currentPlayerId: identifier,
-    currentPlayerRole,
     createRoom,
     joinRoom,
     leaveRoom,
     clearError,
-    startGame,
     startGameWithLocations,
     endGame,
     setRoomLock,
-    submitPuzzleAnswer,
     syncInput,
     claimTyping,
     releaseTyping,
