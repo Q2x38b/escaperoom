@@ -1,14 +1,15 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
-const ENTRY_PASSCODE = "INVESTIGATE";
 const FINAL_PASSCODE = "N738VN";
 
 // Validate entry passcode
 export const validateEntry = mutation({
   args: { passcode: v.string() },
   handler: async (_ctx, args) => {
-    return args.passcode.toUpperCase().trim() === ENTRY_PASSCODE;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const entryPasscode = (globalThis as any).process?.env?.ENTRY_PASSCODE || "TRUMPLIN";
+    return args.passcode.toUpperCase().trim() === entryPasscode.toUpperCase();
   },
 });
 
