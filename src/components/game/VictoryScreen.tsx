@@ -4,7 +4,7 @@ import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
-import { Trophy, Clock, Users, Copy, Check, Plane, ArrowRight, Trash2 } from 'lucide-react';
+import { Trophy, Clock, Users, Copy, Check, Plane, ArrowRight, Trash2, ExternalLink } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { formatTime } from '../../lib/utils';
 
@@ -146,10 +146,20 @@ export function VictoryScreen() {
                   <ArrowRight className="w-5 h-5 text-amber-400 mt-0.5" />
                   <div>
                     <div className="font-medium text-amber-400 mb-1">Next Step: Flight Logs</div>
-                    <p className="text-sm text-white/70">
+                    <p className="text-sm text-white/70 mb-3">
                       Use this aircraft registration number to access the flight logs
                       and discover where the Vance family's plane has been traveling.
                     </p>
+                    <a
+                      href="https://q2x38b.github.io/SkyBridge_Cargo_OPS-PKG-2025-11/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Button variant="default" size="sm" className="bg-amber-500 hover:bg-amber-600 text-black">
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        Access Flight Logs
+                      </Button>
+                    </a>
                   </div>
                 </div>
               </div>
