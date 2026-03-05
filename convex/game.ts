@@ -7,9 +7,7 @@ const FINAL_PASSCODE = "N738VN";
 export const validateEntry = mutation({
   args: { passcode: v.string() },
   handler: async (_ctx, args) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const entryPasscode = (globalThis as any).process?.env?.ENTRY_PASSCODE || "TRUMPLIN";
-    return args.passcode.toUpperCase().trim() === entryPasscode.toUpperCase();
+    return args.passcode.toUpperCase().trim() === "TRUMPLIN";
   },
 });
 
